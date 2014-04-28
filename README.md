@@ -97,6 +97,7 @@ It will then appear in the facter output:
 
 ```
 faust_darwin_defaults_com.apple.alf_globalstate => 0
+```
 
 Challenges
 ==========
