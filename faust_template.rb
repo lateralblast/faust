@@ -1,3 +1,16 @@
+# Name:         faust (Facter Automatic UNIX Symbolic Template)
+# Version:      0.0.2
+# Release:      1
+# License:      Open Source
+# Group:        System
+# Source:       N/A
+# URL:          http://github.com/richardatlateralblast/faust
+# Distribution: Solaris, Red Hat Linux, SuSE Linux, Debian Linux,
+#               Ubuntu Linux, Mac OS X
+# Vendor:       UNIX
+# Packager:     Richard Spindler <richard@lateralblast.com.au>
+# Description:  A template to quickly create custom facts via symlinks
+
 # This fact will is based on a template
 #
 # For example:
@@ -5,20 +18,20 @@
 # module_kernel_type_subtype_parameter
 #
 # module is whatever you've decided to call this module to destinguish it
-# from other facts, eg sput
+# from other facts, eg faust
 #
 # Some examples:
 #
 # List the enabled services on Linux:
 #
-# ln -s sput_template.rb sput_linux_enableservices.rb
+# ln -s faust_template.rb faust_linux_enableservices.rb
 #
 # To check the value of a parameter in a file, eg TIMESYNC in
 # /private/etc/hostprofile on OS X:
 #
-# ln -s sput_template.rb sput_darwin_file_private_etc_host_config_parameter_TIMESYNC.rb
+# ln -s faust_template.rb faust_darwin_file_private_etc_host_config_parameter_TIMESYNC.rb
 #
-# Refer to http://github.com/theengguy/
+# Refer to http://github.com/richardatlateralblast/faust
 
 require 'facter'
 
@@ -151,7 +164,7 @@ if file_name !~ /template/
           fact = %x[#{find_command}]
           fact = fact.gsub(/\n/,",")
         end
-        if type == "wheeluserslastlogin"
+        if type == "inactivewheelusers"
           fact = []
           user_list = %x[cat /etc/group |grep '^wheel:' |cut -f4 -d:].chomp
           user_list = user_list.split(/,/)
