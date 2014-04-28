@@ -58,6 +58,46 @@ ln -s faust_template.rb MODULE_all_installedpackages.rb
 The template has code for determining the installed packages on various
 platforms.
 
+Example
+=======
+
+In case you haven't got the idea, here is an example:
+
+On OS X to determine whether the firewall is enabled, you'd normally type:
+
+```
+defaults read /Library/Preferences/com.apple.alf globalstate
+```
+
+To create a fact out of this normally, you probably create a fact like this:
+
+```
+require 'facter'
+
+kernel    = Facter.value("kernel")
+fact_name = "MODULE_#{kernel}_com.apple.alf_globalstate"
+
+Facter.add(fact_name) do
+  setcode do
+    fact = Facter::Util::Resolution.exec("defaults read /Library/Preferences/com.apple.alf globalstate")
+  end
+end
+```
+
+If you're writing a module that requires you to get the defaults for several
+system parameters this gets tedious.
+
+Using the template a custom fact can be created by simply creating a symbolic link:
+
+```
+ln -s faust_template.rb faust_darwin_defaults_com.apple.alf_globalstate.rb
+```
+
+It will then appear in the facter output:
+
+```
+faust_darwin_defaults_com.apple.alf_globalstate => 0
+
 Challenges
 ==========
 
