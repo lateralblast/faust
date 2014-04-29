@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.0.2
+# Version:      0.0.3
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -188,10 +188,21 @@ if file_name !~ /template/
             fact = "no"
          end
         end
-        if type == "invalidshells"
-          fact = %x[cat /etc/passwd | grep -v '^#' |awk -F: '($1!="root" && $1!="sync" && $1!="shutdown" && $1!="halt" && $3<500 && $7!="/sbin/nologin" && $7!="/bin/false" ) {print $1}']
-          fact = fact.split("\n")
-          fact = fact.join(",")
+        if type == "invalidsystemshells"
+          invalid_list = []
+          user_list    = %x[cat /etc/passwd | grep -v '^#' |awk -F: '($1!="root" && $1!="sync" && $1!="shutdown" && $1!="halt" && $3<500 && $7!="/sbin/nologin" && $7!="/bin/false" ) {print $1}']
+          user_list    = user_list.split("\n")
+          if kernel != "Darwin"
+            user_list.each do |user_name|
+              invalid_check = %x[cat /etc/shadow |egrep -v "\*|\!\!|NP|UP|LK" |grep '^#{user_name}:'']
+              if invalid_check =~ /#{user_name}/
+                invalid_list.push(user_name)
+              end
+            end
+          else
+            invalid_list = user_list
+          end
+          fact = invalid_list.join(",")
         end
         if type == "exec"
           exec = file_info[3..-1].join(" ")
@@ -262,6 +273,14 @@ if file_name !~ /template/
             fact = %x[lslpp -L |awk '{print $1}']
           end
           fact = fact.gsub(/\n/,",")
+        end
+        if type == "exists"
+          fs_item = "/"+file_info[3..-1].join("/")
+          if File.exists(fs_item) or File.directory(fs_item)
+            fact = "yes"
+          else
+            fact = "no"
+          end
         end
         if type == "inetd"
           if File.exists?("/etc/inetd.conf")
