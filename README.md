@@ -1,5 +1,7 @@
-Introduction
-============
+![alt tag](https://raw.github.com/richardatlateralblast/faust/faust.png)
+
+Faust Introduction
+==================
 
 faust = Facter Automatic Unix Symbolic Template
 
