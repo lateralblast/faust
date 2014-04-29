@@ -1,4 +1,11 @@
-![alt tag](https://raw.github.com/richardatlateralblast/faust/faust.png)
+![alt tag](https://raw.githubusercontent.com/richardatlateralblast/faust/master/faust.jpg)
+
+> Have you not led this life quite long enough?
+> How can a further test delight you?
+> ’Tis very well, that once one tries the stuff,
+> But something new must then requite you.
+>
+> -- <cite>Mephistopheles<cite>
 
 Faust Introduction
 ==================
