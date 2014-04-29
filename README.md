@@ -1,8 +1,11 @@
 ![alt tag](https://raw.githubusercontent.com/richardatlateralblast/faust/master/faust.jpg)
 
 > Have you not led this life quite long enough?
+<br>
 > How can a further test delight you?
+<br>
 > ’Tis very well, that once one tries the stuff,
+<br>
 > But something new must then requite you.
 >
 > -- <cite>Mephistopheles<cite>
