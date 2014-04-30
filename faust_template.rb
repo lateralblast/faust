@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.0.3
+# Version:      0.0.4
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -102,7 +102,7 @@ if file_name !~ /template/
           home_dirs.each do |home_dir|
             if File.directory?(home_dir)
               if type == "readabledotfiles"
-                files_list = %x[sudo find #{home_dir} -name .\[A-z,0-9\]* -maxdepth 1 -type f ! -perm 600]
+                files_list = %x[sudo find #{home_dir} -name .\[A-z,0-9\]* -maxdepth 1 -type f -perm +066]
                 files_list = files_list.split(/\n/)
                 files_list.each do |check_file|
                   if File.exists?(check_file)
@@ -120,6 +120,36 @@ if file_name !~ /template/
           if fact =~ /[A-z]/
             fact = fact.join(",")
           end
+        end
+        if type =~ /byothers|byeveryone/
+          dir_name = file_info[3..-1]
+          dir_name = "/"+dir_name.join("/")
+          if type =~ /byothers/
+            if type -~ /readableorwritable/
+              fact     = %x[fine #{dir_name} -type f -perm +066]
+            else
+              fact     = %x[fine #{dir_name} -type f -perm +022]
+            end
+          else
+            if type -~ /readableorwritable/
+              fact     = %x[fine #{dir_name} -type f -perm +006]
+            else
+              fact     = %x[fine #{dir_name} -type f -perm +002]
+            end
+          end
+          fact     = fact.split("\n")
+          fact     = fact.join(",")
+        end
+        if type =~ /directorylisting/
+          dir_name = file_info[3..-1]
+          dir_name = "/"+dir_name.join("/")
+          if type =~ /recursive/
+            fact     = %x[fine #{dir_name} -type f]
+          else
+            fact     = %x[fine #{dir_name} -maxdepth 1 -type f]
+          end
+          fact     = fact.split("\n")
+          fact     = fact.join(",")
         end
         if type == "unownedfiles" and fs_search == "yes"
           if kernel == "SunOS"
