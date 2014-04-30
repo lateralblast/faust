@@ -7,3 +7,5 @@
 # Minor updates to template and documentation
 # 0.0.4: Wed 30 Apr 2014 13:07:52 EST
 # Added directory listing types
+# 0.0.5: Thu  1 May 2014 08:31:52 EST
+# Grouped OS specific facts together

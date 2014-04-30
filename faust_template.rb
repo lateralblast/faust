@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.0.4
+# Version:      0.0.5
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -245,9 +245,6 @@ if file_name !~ /template/
           fact    = (Time.now - File.stat(fs_item).mtime).to_i / 86400.0
           fact    = fact.to_i.to_s
         end
-        if type == "trustchk"
-          fact = Facter::Util::Resolution.exec("/usr/sbin/trustchk -p #{subtype} 2>&1 |cut -f2 -d=")
-        end
         if type == "perms"
           fs_item = file_info[3..-1]
           fs_item = "/"+fs_item.join("/")
@@ -258,15 +255,6 @@ if file_name !~ /template/
           user    = %x[cat /etc/passwd |awk -F: '{if ($3 == #{uid}) print $1}'].chomp
           group   = %x[cat /etc/group |awk -F: '{if ($3 == #{gid}) print $1}'].chomp
           fact    = mode+","+user+","+group
-        end
-        if type == "pmset"
-          fact = Facter::Util::Resolution.exec("pmset -g |grep '#{subtype}' |awk '{print $2}' |sed 's/ //g'")
-        end
-        if type == "dscl"
-          if subtype != "root"
-            subtype = subtype.capitalize
-          end
-          fact = Facter::Util::Resolution.exec("dscl . -read /Users/#{subtype} #{parameter} 2>&1 |awk -F: '{print $(NF)}' |sed 's/ //g'")
         end
         if type == "dotfiles"
           dot_files = []
@@ -327,10 +315,6 @@ if file_name !~ /template/
           end
           fact = fact.gsub(/\n/,",")
         end
-        if type == "rctcp"
-          fact = %x[cat /etc/rc.tcpip |grep -v '^#' |awk '{print $2}']
-          fact = fact.gsub(/\n/,",")
-        end
         if type == "services"
           if kernel == "Darwin"
             fact = %x[launchctl list |awk '{print $3}' |grep -v '^Label']
@@ -343,12 +327,6 @@ if file_name !~ /template/
             end
           end
           fact = fact.gsub(/\n/,",")
-        end
-        if type == "managednode"
-          fact = Facter::Util::Resolution.exec("pwpolicy -n -getglobalpolicy 2>&1")
-          if fact =~ /Error/
-            fact = "/Local/Default"
-          end
         end
         if type =~ /duplicate/
           if type == "duplicateuids"
@@ -368,24 +346,6 @@ if file_name !~ /template/
           fact = fact.uniq
           fact = fact.join(",")
         end
-        if type == "ndd"
-          if os_version =~ /10/
-            driver    = "/dev/"+file_info[3]
-            parameter = file_info[4..-2].join("_")
-            if parameter == "tcp_extra_priv_ports_add"
-              fact = Facter::Util::Resolution.exec("ndd -get #{driver} tcp_extra_priv_ports #{parameter}")
-            else
-              fact = Facter::Util::Resolution.exec("ndd -get #{driver} #{parameter}")
-            end
-          end
-        end
-        if type == "ipadm"
-          if os_version =~ /11/
-            driver    = file_info[3]
-            parameter = "_"+file_info[4..-2].join("_")
-            fact = Facter::Util::Resolution.exec("ipadm show-prop #{driver} -co current #{parameter}")
-          end
-        end
         if type =~ /configfile/
           if type =~ /apache/
             search_file = "httpd.conf"
@@ -402,20 +362,6 @@ if file_name !~ /template/
               end
             end
             fact = config_file_list[0]
-          end
-        end
-        if type == "defaults"
-          fact = Facter::Util::Resolution.exec("defaults read /Library/Preferences/#{subtype} #{parameter} 2>&1 |grep -v default |sed 's/ $//g'")
-        end
-        if type == "lssec"
-          fact = Facter::Util::Resolution.exec("lssec -f #{sec_file} -s #{sec_stanza} -a #{parameter} 2>&1 |awk '{print $2}' |cut -f2 -d=")
-        end
-        if type == "inetadm"
-          file_info = file_info[3..-1].join("_")
-          if file_info =~ /parameter/
-            (service_name,parameter) = file_info.split("_parameter_")
-            service_name = service_name.gsub(/_/,"/")
-            fact = Facter::Util::Resolution.exec("inetadm -l #{service_name} |grep #{parameter} |cut -f2 -d=")
           end
         end
         if type == "file"
@@ -510,9 +456,69 @@ if file_name !~ /template/
             end
           end
         end
-        if type == "pwpolicy"
-          managednode = Facter.value("#{modname}_darwin_system_managednode")
-          fact = Facter::Util::Resolution.exec("pwpolicy -n #{managednode} -getglobalpolicy #{subtype} 2>&1 |cut -f2 -d= |sed 's/ //g'")
+        if kernel == "AIX"
+          if type == "trustchk"
+            fact = Facter::Util::Resolution.exec("/usr/sbin/trustchk -p #{subtype} 2>&1 |cut -f2 -d=")
+          end
+          if type == "lssec"
+            fact = Facter::Util::Resolution.exec("lssec -f #{sec_file} -s #{sec_stanza} -a #{parameter} 2>&1 |awk '{print $2}' |cut -f2 -d=")
+          end
+          if type == "inetadm"
+            file_info = file_info[3..-1].join("_")
+            if file_info =~ /parameter/
+              (service_name,parameter) = file_info.split("_parameter_")
+              service_name = service_name.gsub(/_/,"/")
+              fact = Facter::Util::Resolution.exec("inetadm -l #{service_name} |grep #{parameter} |cut -f2 -d=")
+            end
+          end
+        end
+        if kernel == "SunOS"
+          if type == "ndd"
+            if os_version =~ /10/
+              driver    = "/dev/"+file_info[3]
+              parameter = file_info[4..-2].join("_")
+              if parameter == "tcp_extra_priv_ports_add"
+                fact = Facter::Util::Resolution.exec("ndd -get #{driver} tcp_extra_priv_ports #{parameter}")
+              else
+                fact = Facter::Util::Resolution.exec("ndd -get #{driver} #{parameter}")
+              end
+            end
+          end
+          if type == "ipadm"
+            if os_version =~ /11/
+              driver    = file_info[3]
+              parameter = "_"+file_info[4..-2].join("_")
+              fact = Facter::Util::Resolution.exec("ipadm show-prop #{driver} -co current #{parameter}")
+            end
+          end
+        end
+        if kernel == "Darwin"
+          if type == "managednode"
+            fact = Facter::Util::Resolution.exec("pwpolicy -n -getglobalpolicy 2>&1")
+            if fact =~ /Error/
+              fact = "/Local/Default"
+            end
+          end
+          if type == "pmset"
+            fact = Facter::Util::Resolution.exec("pmset -g |grep '#{subtype}' |awk '{print $2}' |sed 's/ //g'")
+          end
+          if type == "dscl"
+            if subtype != "root"
+              subtype = subtype.capitalize
+            end
+            fact = Facter::Util::Resolution.exec("dscl . -read /Users/#{subtype} #{parameter} 2>&1 |awk -F: '{print $(NF)}' |sed 's/ //g'")
+          end
+          if type == "defaults"
+            fact = Facter::Util::Resolution.exec("defaults read /Library/Preferences/#{subtype} #{parameter} 2>&1 |grep -v default |sed 's/ $//g'")
+          end
+          if type == "rctcp"
+            fact = %x[cat /etc/rc.tcpip |grep -v '^#' |awk '{print $2}']
+            fact = fact.gsub(/\n/,",")
+          end
+          if type == "pwpolicy"
+            managednode = Facter.value("#{modname}_darwin_system_managednode")
+            fact = Facter::Util::Resolution.exec("pwpolicy -n #{managednode} -getglobalpolicy #{subtype} 2>&1 |cut -f2 -d= |sed 's/ //g'")
+         end
        end
         if fact !~ /[0-9]|[A-z]/
           fact = ""
