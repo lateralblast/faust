@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.0.5
+# Version:      0.0.6
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -69,16 +69,8 @@ if file_name !~ /template/
       os_distro = Facter.value("lsbdistid")
     end
   end
-  if type == "lssec"
-    sec_file   = file_info[3]
-    sec_stanza = file_info[4]
-    parameter  = file_info[5]
-  end
   if type =~ /pwpolicy|file|defaults|dscl|pmset|trustchk/
     subtype   = file_info[3]
-  end
-  if type =~ /dscl|defaults/
-    parameter = file_info[4]
   end
   if f_kernel == "all" or f_kernel == kernel
     if f_kernel == "all"
@@ -461,6 +453,9 @@ if file_name !~ /template/
             fact = Facter::Util::Resolution.exec("/usr/sbin/trustchk -p #{subtype} 2>&1 |cut -f2 -d=")
           end
           if type == "lssec"
+            sec_file   = file_info[3]
+            sec_stanza = file_info[4]
+            parameter  = file_info[5]
             fact = Facter::Util::Resolution.exec("lssec -f #{sec_file} -s #{sec_stanza} -a #{parameter} 2>&1 |awk '{print $2}' |cut -f2 -d=")
           end
           if type == "inetadm"
@@ -473,6 +468,10 @@ if file_name !~ /template/
           end
         end
         if kernel == "SunOS"
+          if type == "logadm"
+            log_name = "/"+file_info[3..-1].join("/")
+            fact = Facter::Util::Resolution.exec("logadm -V |grep -v '^#' |grep '#{log_name}'")
+          end
           if type == "ndd"
             if os_version =~ /10/
               driver    = "/dev/"+file_info[3]
@@ -502,14 +501,17 @@ if file_name !~ /template/
           if type == "pmset"
             fact = Facter::Util::Resolution.exec("pmset -g |grep '#{subtype}' |awk '{print $2}' |sed 's/ //g'")
           end
-          if type == "dscl"
-            if subtype != "root"
-              subtype = subtype.capitalize
+          if type =~ /dscl|defaults/
+            parameter = file_info[4]
+            if type == "dscl"
+              if subtype != "root"
+                subtype = subtype.capitalize
+              end
+              fact = Facter::Util::Resolution.exec("dscl . -read /Users/#{subtype} #{parameter} 2>&1 |awk -F: '{print $(NF)}' |sed 's/ //g'")
             end
-            fact = Facter::Util::Resolution.exec("dscl . -read /Users/#{subtype} #{parameter} 2>&1 |awk -F: '{print $(NF)}' |sed 's/ //g'")
-          end
-          if type == "defaults"
-            fact = Facter::Util::Resolution.exec("defaults read /Library/Preferences/#{subtype} #{parameter} 2>&1 |grep -v default |sed 's/ $//g'")
+            if type == "defaults"
+              fact = Facter::Util::Resolution.exec("defaults read /Library/Preferences/#{subtype} #{parameter} 2>&1 |grep -v default |sed 's/ $//g'")
+            end
           end
           if type == "rctcp"
             fact = %x[cat /etc/rc.tcpip |grep -v '^#' |awk '{print $2}']
