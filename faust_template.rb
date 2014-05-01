@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.0.7
+# Version:      0.0.8
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -366,12 +366,25 @@ if file_name !~ /template/
           config_file = Facter.value(config_file)
           fact        = Facter::Util::Resolution.exec("cat #{config_file} |grep '^#{parameter}' |awk '{print $2}' |sed 's/ $//g'")
         end
+        if type == "pam"
+          mod_name  = file_info[3]
+          parameter = file_info[4..-1].join("_")
+          if kernel == "SunOS"
+            fact = Facter::Util::Resolution.exec("cat /etc/pam.conf |grep '^#{mod_name}' |grep '#{parameter}'")
+          else
+            fact = Facter::Util::Resolution.exec("cat /etc/pam..d/#{mod_name}' |grep '#{parameter}'")
+          end
+        end
         if type == "file"
           separator = " "
           comment   = "#"
           file_info = file_info[3..-1].join("_")
-          if file_info =~ /parameter/
-            (config_file,parameter) = file_info.split("_parameter_")
+          if file_info =~ /param/
+            if file_info =~ /parameter/
+              (config_file,parameter) = file_info.split("_parameter_")
+            else
+              (config_file,parameter) = file_info.split("_param_")
+            end
             parameter = parameter.gsub(/_star_/,"\*")
             parameter = parameter.gsub(/_bang_/,"\!")
             parameter = parameter.gsub(/_/," ")
