@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.0.6
+# Version:      0.0.7
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -69,7 +69,7 @@ if file_name !~ /template/
       os_distro = Facter.value("lsbdistid")
     end
   end
-  if type =~ /pwpolicy|file|defaults|dscl|pmset|trustchk/
+  if type =~ /pwpolicy|file|defaults|dscl|pmset/
     subtype   = file_info[3]
   end
   if f_kernel == "all" or f_kernel == kernel
@@ -112,6 +112,10 @@ if file_name !~ /template/
           if fact =~ /[A-z]/
             fact = fact.join(",")
           end
+        end
+        if type =~ /syslog/
+          facility = file_info[3]
+          fact     = Facter::Util::Resolution.exec("cat /etc/#{type}.conf | grep -v '^#' |grep '#{facility}'")
         end
         if type =~ /byothers|byeveryone/
           dir_name = file_info[3..-1]
@@ -356,6 +360,12 @@ if file_name !~ /template/
             fact = config_file_list[0]
           end
         end
+        if type == "apache"
+          parameter = file_info[3]
+          config_file = modname+"_"+kernel.downcase+"_"+subtype+"configfile"
+          config_file = Facter.value(config_file)
+          fact        = Facter::Util::Resolution.exec("cat #{config_file} |grep '^#{parameter}' |awk '{print $2}' |sed 's/ $//g'")
+        end
         if type == "file"
           separator = " "
           comment   = "#"
@@ -448,9 +458,16 @@ if file_name !~ /template/
             end
           end
         end
+        if kernel == "Linux"
+          if type == "sysctl"
+            parameter = file_info[3..-1].join("_")
+            fact = Facter::Util::Resolution.exec("cat /etc/sysctl.conf |grep '#{parameter}' |awk -F= '{print $2}'")
+          end
+        end
         if kernel == "AIX"
           if type == "trustchk"
-            fact = Facter::Util::Resolution.exec("/usr/sbin/trustchk -p #{subtype} 2>&1 |cut -f2 -d=")
+            parameter = file_info[3..-1].join("_")
+            fact = Facter::Util::Resolution.exec("/usr/sbin/trustchk -p #{parameter} 2>&1 |cut -f2 -d=")
           end
           if type == "lssec"
             sec_file   = file_info[3]

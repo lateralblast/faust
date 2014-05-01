@@ -11,3 +11,5 @@
 # Grouped OS specific facts together
 # 0.0.6: Thu  1 May 2014 09:40:58 EST
 # Added logadm for Solaris
+# 0.0.7: Thu  1 May 2014 15:43:43 EST
+# Added sysctl for Linux and fixed trustchk for AIX

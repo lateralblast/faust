@@ -114,14 +114,20 @@ faust_darwin_defaults_com.apple.alf_globalstate => 0
 Challenges
 ==========
 
+Some challenges with using a symbolic link approach:
+
 https://github.com/richardatlateralblast/faust/wiki/Challenges
 
 Types
 =====
 
+Types provided by faust with some examples:
+
 https://github.com/richardatlateralblast/faust/wiki/Types
 
 Examples
 ========
+
+Some more detailed examples:
 
 https://github.com/richardatlateralblast/faust/wiki/Examples
