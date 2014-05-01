@@ -15,3 +15,5 @@
 # Added sysctl for Linux and fixed trustchk for AIX
 # 0.0.8: Fri  2 May 2014 09:03:19 EST
 # Added PAM support
+# 0.0.9: Fri  2 May 2014 09:41:32 EST
+# Added audit for Linux

@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.0.8
+# Version:      0.0.9
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -472,6 +472,10 @@ if file_name !~ /template/
           end
         end
         if kernel == "Linux"
+          if type == "audit"
+            parameter = file_info[3..-1].join(" ")
+            fact = Facter::Util::Resolution.exec("cat /etc/audit/audit.rules |grep '#{parameter}")
+          end
           if type == "sysctl"
             parameter = file_info[3..-1].join("_")
             fact = Facter::Util::Resolution.exec("cat /etc/sysctl.conf |grep '#{parameter}' |awk -F= '{print $2}'")
