@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.0.9
+# Version:      0.1.0
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -45,7 +45,7 @@ file_name = File.basename(file_name,".*")
 
 fs_search = "no"
 
-if file_name !~ /template/
+if file_name !~ /template|operatingsystemupdate/
   if file_name =~ /_chsec_/
     file_name = file_name.gsub(/_chsec_/,"_lssec")
   end
@@ -473,8 +473,16 @@ if file_name !~ /template/
         end
         if kernel == "Linux"
           if type == "audit"
-            parameter = file_info[3..-1].join(" ")
-            fact = Facter::Util::Resolution.exec("cat /etc/audit/audit.rules |grep '#{parameter}")
+            if file_name =~ /_etc_|_var_|_run_|_sbin_/
+              parameter = file_info[3..-1].join("/")
+            else
+              if file_name =~ /_log_/
+                parameter = file_info[3..-1].join("_")
+              else
+                parameter = file_info[3..-1].join(" ")
+              end
+            end
+            fact = Facter::Util::Resolution.exec("cat /etc/audit/audit.rules |grep ' #{parameter} '")
           end
           if type == "sysctl"
             parameter = file_info[3..-1].join("_")
@@ -561,6 +569,27 @@ if file_name !~ /template/
         end
         fact
       end
+    end
+  end
+else
+  if file_name =~ /operatingsystemupdate/
+    os_version = Facter.value("operatingsystemrelease")
+    kernel     = Facter.value("kernel")
+    Facter.add("operatingsystemupdate") do
+      if $kernel == "SunOS"
+        case os_version
+        when "5.11"
+          fact = Facter::Util::Resolution.exec("cat /etc/release |grep Solaris |awk '{print $3}' |cut -f2 -d'.'`")
+        when "5.10"
+          fact = Facter::Util::Resolution.exec("cat /etc/release |grep Solaris |awk '{print $5}' |cut -f2 -d'_' |sed 's/[A-z]//g'")
+        else
+          fact = Facter::Util::Resolution.exec("cat /etc/release |grep Solaris |awk '{print $4}' |cut -f2 -d'_' |sed 's/[A-z]//g'")
+        end
+      end
+      if $kernel == "Darwin"
+        fact = Facter.value("macosx_productversion_minor")
+      end
+      fact
     end
   end
 end

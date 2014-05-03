@@ -17,3 +17,5 @@
 # Added PAM support
 # 0.0.9: Fri  2 May 2014 09:41:32 EST
 # Added audit for Linux
+# 0.1.0: Sat  3 May 2014 10:13:40 EST
+# Added operatingsystemupdate
