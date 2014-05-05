@@ -29,3 +29,5 @@
 # Added avahi type
 # 0.1.5: Tue  6 May 2014 07:50:23 EST
 # Added launchctl type and initial XML parsing capability
+# 0.1.6: Tue  6 May 2014 08:55:44 EST
+# Added x*resourcesfiles types

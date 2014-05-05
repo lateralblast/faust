@@ -572,6 +572,17 @@ if file_name !~ /template|operatingsystemupdate/
           end
         end
         if kernel == "SunOS"
+          if type =~ /xresourcesfiles|xsysresourcesfiles/
+            dir_name = "/usr/dt/config"
+            if File.directory?(dir_name)
+              if type == "xresourcesfiles"
+                fact = %x[find #{dir_name} -name Xresources]
+              end
+              if type == "xsysresourcefiles"
+                fact = %x[find #{dir_name} -name sys.resources]
+              end
+            end
+          end
           if type == "logadm"
             log_name = "/"+file_info[3..-1].join("/")
             fact = Facter::Util::Resolution.exec("logadm -V |grep -v '^#' |grep '#{log_name}'")
