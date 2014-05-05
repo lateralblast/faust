@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.1.4
+# Version:      0.1.5
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -34,6 +34,7 @@
 # Refer to http://github.com/richardatlateralblast/faust
 
 require 'facter'
+require 'rexml/document'
 
 # Get file name for processing
 
@@ -79,6 +80,9 @@ if file_name !~ /template|operatingsystemupdate/
     else
       fact_name = file_name
     end
+    if type == "launchctl"
+      fact_name = fact_name.gsub(/\.plist/,"")
+    end
     Facter.add(fact_name) do
       if f_kernel != "all"
         confine :kernel => f_kernel
@@ -111,6 +115,33 @@ if file_name !~ /template|operatingsystemupdate/
           end
           if fact =~ /[A-z]/
             fact = fact.join(",")
+          end
+        end
+        if type =~ /xml|plist|launchctl/
+          if type == "launchctl"
+            config_file = "/System/Library/LaunchDaemons/"+file_info[3]+".plist"
+            parameter   = file_info[4..-1].join("_")
+          else
+            if file_info =~ /param/
+              if file_info =~ /parameter/
+                (config_file,parameter) = file_info.split("_parameter_")
+              else
+                (config_file,parameter) = file_info.split("_param_")
+              end
+            end
+          end
+          if File.exists?(config_file)
+            xml_file = File.new(config_file)
+            xml_doc  = REXML::Document.new xml_file
+            if type == "launchctl"
+              fact   = []
+              if parameter = "ProgramArguments"
+                xml_doc.elements.each("//array/string") do |element|
+                  fact.push(element.text)
+                end
+              end
+              fact = fact.join(",")
+            end
           end
         end
         if type =~ /syslog/
@@ -241,7 +272,6 @@ if file_name !~ /template|operatingsystemupdate/
           if type == "invalidsystemaccounts"
             invalid_list = %x[awk -F: '$3 == "0" { print $1 }' /etc/passwd |grep -v root]
             invalid_list = invalid_list.split("\n")
-            invalid_list = invalid_list.join(",")
           end
           fact = invalid_list.join(",")
         end

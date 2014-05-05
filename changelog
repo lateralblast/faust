@@ -27,3 +27,5 @@
 # Made configfile type more generic
 # 0.1.4: Mon  5 May 2014 14:00:39 EST
 # Added avahi type
+# 0.1.5: Tue  6 May 2014 07:50:23 EST
+# Added launchctl type and initial XML parsing capability
