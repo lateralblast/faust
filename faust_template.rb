@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.1.7
+# Version:      0.1.8
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -584,6 +584,10 @@ if file_name !~ /template|operatingsystemupdate/
                 fact = %x[find #{dir_name} -name sys.resources]
               end
             end
+          end
+          if type == "coreadm"
+            parameter = file_info[3..-1].join(" ")
+            fact      = Facter::Util::Resolution.exec("coreadm |grep '#{parameter}' |cut -f2 -d: |sed 's/^ //g'")
           end
           if type == "logadm"
             log_name = "/"+file_info[3..-1].join("/")

@@ -33,3 +33,5 @@
 # Added x*resourcesfiles types
 # 0.1.7: Tue  6 May 2014 09:42:40 EST
 # Added sysctl support for FreeBSD
+# 0.1.8: Tue  6 May 2014 09:57:22 EST
+# Added coreadm type
