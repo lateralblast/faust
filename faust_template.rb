@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.1.3
+# Version:      0.1.4
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -491,6 +491,12 @@ if file_name !~ /template|operatingsystemupdate/
           end
         end
         if kernel == "Linux"
+          if type == "avahi"
+            parameter = file_info[3]
+            fact_name = type+"configfile"
+            file_name = Facter.value(fact_name)
+            fact      = Facter::Util::Resolution.exec("cat #{file_name} |grep '#{parameter} |cut -f2 -d= |sed 's/ //g'")
+          end
           if type == "prelinkstatus"
             fact_name    = mod_name+"_linux_prelinkconfigfile"
             prelink_file = Facter.value(fact_name)
