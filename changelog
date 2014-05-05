@@ -19,3 +19,9 @@
 # Added audit for Linux
 # 0.1.0: Sat  3 May 2014 10:13:40 EST
 # Added operatingsystemupdate
+# 0.1.1: Sat May  3 14:02:46 EST 2014
+# Added invalidsystemaccounts
+# 0.1.2: Mon  5 May 2014 12:48:15 EST
+# Added prelinkstatus and prelinkconfigfile
+# 0.1.3: Mon  5 May 2014 13:27:12 EST
+# Made configfile type more generic

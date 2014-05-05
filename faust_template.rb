@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.1.0
+# Version:      0.1.3
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -214,19 +214,34 @@ if file_name !~ /template|operatingsystemupdate/
             fact = "no"
          end
         end
-        if type == "invalidsystemshells"
-          invalid_list = []
-          user_list    = %x[cat /etc/passwd | grep -v '^#' |awk -F: '($1!="root" && $1!="sync" && $1!="shutdown" && $1!="halt" && $3<500 && $7!="/sbin/nologin" && $7!="/bin/false" ) {print $1}']
-          user_list    = user_list.split("\n")
-          if kernel != "Darwin"
-            user_list.each do |user_name|
-              invalid_check = %x[cat /etc/shadow |egrep -v "\*|\!\!|NP|UP|LK" |grep '^#{user_name}:'']
-              if invalid_check =~ /#{user_name}/
-                invalid_list.push(user_name)
+        if type == "sulogin"
+          if kernel == "Linux"
+            fact = %x[cat /etc/inittab |grep -v '^#' |grep 'sulogin']
+          end
+          if kernel == "FreeBSD"
+            fact = %x[cat /etc/ttys |grep -v '^#' |grep 'console']
+          end
+        end
+        if type =~ /invalid/
+          if type == "invalidsystemshells"
+            invalid_list = []
+            user_list    = %x[cat /etc/passwd | grep -v '^#' |awk -F: '($1!="root" && $1!="sync" && $1!="shutdown" && $1!="halt" && $3<500 && $7!="/sbin/nologin" && $7!="/bin/false" ) {print $1}']
+            user_list    = user_list.split("\n")
+            if kernel != "Darwin"
+              user_list.each do |user_name|
+                invalid_check = %x[cat /etc/shadow |egrep -v "\*|\!\!|NP|UP|LK" |grep '^#{user_name}:'']
+                if invalid_check =~ /#{user_name}/
+                  invalid_list.push(user_name)
+                end
               end
+            else
+              invalid_list = user_list
             end
-          else
-            invalid_list = user_list
+          end
+          if type == "invalidsystemaccounts"
+            invalid_list = %x[awk -F: '$3 == "0" { print $1 }' /etc/passwd |grep -v root]
+            invalid_list = invalid_list.split("\n")
+            invalid_list = invalid_list.join(",")
           end
           fact = invalid_list.join(",")
         end
@@ -344,13 +359,17 @@ if file_name !~ /template|operatingsystemupdate/
         end
         if type =~ /configfile/
           if type =~ /apache/
-            search_file = "httpd.conf"
+            prefix = "httpd"
+          else
+            prefix = type.gsub(/configfile/,"")
           end
+          search_file = prefix+".conf"
           config_file = ""
           if config_file !~ /[A-z]/
             config_file_list = []
             dir_list = [ '/etc' '/etc/sfw', '/etc/apache', '/etc/apache2',
-                         '/usr/local/etc', '/usr/sfw/etc', '/opt/sfw/etc' ]
+                         '/etc/default', '/etc/sysconfig', '/usr/local/etc',
+                         '/usr/sfw/etc', '/opt/sfw/etc' ]
             dir_list.each do |dir_name|
               config_file=dir_name+"/"+search_file
               if File.exists?(config_file)
@@ -472,6 +491,13 @@ if file_name !~ /template|operatingsystemupdate/
           end
         end
         if kernel == "Linux"
+          if type == "prelinkstatus"
+            fact_name    = mod_name+"_linux_prelinkconfigfile"
+            prelink_file = Facter.value(fact_name)
+            if File.exists?(prelink_file)
+              fact = Facter::Util::Resolution.exec("cat #{prelink_file} |grep PRELINKING |cut -f2 -d= |sed 's/ //g'")
+            end
+          end
           if type == "audit"
             if file_name =~ /_etc_|_var_|_run_|_sbin_/
               parameter = file_info[3..-1].join("/")
