@@ -31,3 +31,5 @@
 # Added launchctl type and initial XML parsing capability
 # 0.1.6: Tue  6 May 2014 08:55:44 EST
 # Added x*resourcesfiles types
+# 0.1.7: Tue  6 May 2014 09:42:40 EST
+# Added sysctl support for FreeBSD
