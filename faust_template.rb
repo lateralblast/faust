@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.1.8
+# Version:      0.1.9
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -117,6 +117,26 @@ if file_name !~ /template|operatingsystemupdate/
             fact = fact.join(",")
           end
         end
+        if type =~ /cron/
+          if type =~ /allow|deny/
+            file_name = file_name.gsub(/cron/,"")
+            file_name = "/etc/cron"+file_name
+            if File.exists?(file_name)
+              fact = %x[cat #{file_name}]
+              fact = fact.split("\n").join(",")
+            end
+          end
+          if type =~ /users/
+            if kernel == "SunOS"
+              user_list = %x[ls -l /var/spool/cron/crontabs |awk '{print $3}' |grep '[A-z]' |uniq]
+              user_list = user_list.split("\n").join(",")
+            end
+            if kernel == "Linux"
+              user_list = %x[ls -l /etc/cron.*/ |awk '{print $3}' |grep '[A-z]' |uniq]
+            end
+            fact = user_list.split("\n").join(",")
+          end
+        end
         if type =~ /xml|plist|launchctl/
           if type == "launchctl"
             config_file = "/System/Library/LaunchDaemons/"+file_info[3]+".plist"
@@ -135,7 +155,7 @@ if file_name !~ /template|operatingsystemupdate/
             xml_doc  = REXML::Document.new xml_file
             if type == "launchctl"
               fact   = []
-              if parameter = "ProgramArguments"
+              if parameter == "ProgramArguments"
                 xml_doc.elements.each("//array/string") do |element|
                   fact.push(element.text)
                 end
