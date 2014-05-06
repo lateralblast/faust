@@ -37,3 +37,5 @@
 # Added coreadm type
 # 0.1.9: Tue  6 May 2014 13:56:11 EST
 # Added cronusers, cronallow, and crondeny types
+# 0.2.0: Tue  6 May 2014 17:13:45 EST
+# Added auditclass type for Solaris

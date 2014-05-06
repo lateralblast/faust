@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.1.9
+# Version:      0.2.0
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -413,13 +413,18 @@ if file_name !~ /template|operatingsystemupdate/
           else
             prefix = type.gsub(/configfile/,"")
           end
-          search_file = prefix+".conf"
+          if prefix =~ /^audit|^exec/
+            search_file = prefix.gsub(/class/,"_class")
+          else
+            search_file = prefix+".conf"
+          end
           config_file = ""
           if config_file !~ /[A-z]/
             config_file_list = []
             dir_list = [ '/etc' '/etc/sfw', '/etc/apache', '/etc/apache2',
                          '/etc/default', '/etc/sysconfig', '/usr/local/etc',
-                         '/usr/sfw/etc', '/opt/sfw/etc' ]
+                         '/usr/sfw/etc', '/opt/sfw/etc', '/etc/cups',
+                         '/etc/default', '/etc/security' ]
             dir_list.each do |dir_name|
               config_file=dir_name+"/"+search_file
               if File.exists?(config_file)
@@ -570,7 +575,7 @@ if file_name !~ /template|operatingsystemupdate/
         if kernel =~ /Linux|FreeBSD/
           if type == "sysctl"
             parameter = file_info[3..-1].join("_")
-            fact = Facter::Util::Resolution.exec("cat /etc/sysctl.conf |grep '#{parameter}' |awk -F= '{print $2}'")
+            fact      = Facter::Util::Resolution.exec("cat /etc/sysctl.conf |grep '#{parameter}' |awk -F= '{print $2}'")
           end
         end
         if kernel == "AIX"
@@ -594,6 +599,10 @@ if file_name !~ /template|operatingsystemupdate/
           end
         end
         if kernel == "SunOS"
+          if type == "auditclass"
+            parameter = file_info[3..-1].join("_")
+            fact      = Facter::Util::Resolution.exec("cat /etc/security/audit_class |grep '#{parameter}'")
+          end
           if type =~ /xresourcesfiles|xsysresourcesfiles/
             dir_name = "/usr/dt/config"
             if File.directory?(dir_name)
