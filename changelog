@@ -41,3 +41,5 @@
 # Added auditclass type for Solaris
 # 0.2.1: Tue  6 May 2014 19:38:50 EST
 # Added cups type
+# 0.2.2: Wed  7 May 2014 08:45:31 EST
+# Added inetdservices and xinetdservices

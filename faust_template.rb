@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.2.0
+# Version:      0.2.2
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -24,7 +24,7 @@
 #
 # List the enabled services on Linux:
 #
-# ln -s faust_template.rb faust_linux_enableservices.rb
+# ln -s faust_template.rb faust_linux_services.rb
 #
 # To check the value of a parameter in a file, eg TIMESYNC in
 # /private/etc/hostprofile on OS X:
@@ -376,15 +376,27 @@ if file_name !~ /template|operatingsystemupdate/
           end
           fact = fact.gsub(/\n/,",")
         end
-        if type == "services"
-          if kernel == "Darwin"
-            fact = %x[launchctl list |awk '{print $3}' |grep -v '^Label']
+        if type =~ /services/
+          if type =~ /system/
+            if kernel == "Darwin"
+              fact = %x[launchctl list |awk '{print $3}' |grep -v '^Label']
+            end
+            if kernel == "SunOS"
+              if os_version == "5.11"
+                fact = %x[svcs -a |egrep '^online|^legacy' |awk '{print $3}']
+              else
+                fact = %x[find /etc/rc*.d -type f |grep -v '_[A-z]']
+              end
+            end
           end
-          if kernel == "SunOS"
-            if os_version == "5.11"
-              fact = %x[svcs -a |egrep '^online|^legacy' |awk '{print $3}']
+          if type =~ /init/
+            fact = %x[find /etc/rc*.d -type f |grep -v '_[A-z]']
+          end
+          if type =~ /inet/
+            if type =~ /xinet/
+              fact = %x[grep enabled /etc/xinetd.d/* |cut -f1 -d:]
             else
-              fact = %x[find /etc/rc*.d -type f |grep -v '_[A-z]']
+              fact = %x[cat /etc/inetd.conf |grep -v '^#' |awk '{print $1}']
             end
           end
           fact = fact.gsub(/\n/,",")
