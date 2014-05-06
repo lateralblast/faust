@@ -411,7 +411,11 @@ if file_name !~ /template|operatingsystemupdate/
           if type =~ /apache/
             prefix = "httpd"
           else
-            prefix = type.gsub(/configfile/,"")
+            if type =~ /cups/
+              prefix = "cupsd"
+            else
+              prefix = type.gsub(/configfile/,"")
+            end
           end
           if prefix =~ /^audit|^exec/
             search_file = prefix.gsub(/class/,"_class")
@@ -434,7 +438,7 @@ if file_name !~ /template|operatingsystemupdate/
             fact = config_file_list[0]
           end
         end
-        if type == "apache"
+        if type =~ /apache|cups/
           parameter = file_info[3]
           config_file = modname+"_"+kernel.downcase+"_"+subtype+"configfile"
           config_file = Facter.value(config_file)
