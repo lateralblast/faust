@@ -47,3 +47,5 @@
 # Added system type for Solaris
 # 0.2.4: Wed  7 May 2014 15:03:47 EST
 # Added extra handling for file names with underscores
+# 0.2.5: Wed  7 May 2014 15:21:15 EST
+# Added NIS entries

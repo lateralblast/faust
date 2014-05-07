@@ -137,6 +137,15 @@ if file_name !~ /template|operatingsystemupdate/
             fact = user_list.split("\n").join(",")
           end
         end
+        if type =~ /^nis/
+          if type =~ /group/
+            fact = %x[cat /etc/group |grep '^+']
+          end
+          if type =~ /password/
+            fact = %x[cat /etc/passwd |grep '^+']
+          end
+          fact = fact.gsub("\n",/,/)
+        end
         if type =~ /xml|plist|launchctl/
           if type == "launchctl"
             config_file = "/System/Library/LaunchDaemons/"+file_info[3]+".plist"
