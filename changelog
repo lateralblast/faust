@@ -43,3 +43,7 @@
 # Added cups type
 # 0.2.2: Wed  7 May 2014 08:45:31 EST
 # Added inetdservices and xinetdservices
+# 0.2.3: Wed  7 May 2014 11:15:36 EST
+# Added system type for Solaris
+# 0.2.4: Wed  7 May 2014 15:03:47 EST
+# Added extra handling for file names with underscores

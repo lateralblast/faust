@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.2.2
+# Version:      0.2.4
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -430,9 +430,14 @@ if file_name !~ /template|operatingsystemupdate/
             end
           end
           if prefix =~ /^audit|^exec/
-            search_file = prefix.gsub(/class/,"_class")
+            prefix      = prefix.gsub(/class/,"_class")
+            config_file = "/etc/security/"+prefix
           else
-            search_file = prefix+".conf"
+            if prefix == "system"
+              config_file = "/etc/system"
+            else
+              search_file = prefix+".conf"
+            end
           end
           config_file = ""
           if config_file !~ /[A-z]/
@@ -490,6 +495,11 @@ if file_name !~ /template|operatingsystemupdate/
             else
               config_file = config_file.gsub(/^_/,"")
               config_file = config_file.gsub(/_/,"/")
+              config_file = config_file.gsub(/bash\/profile$/,"bash_profile")
+              if config_file =~ /attr$|class$|privs$|warn$/
+                config_info = config_file.split(/\//)
+                config_file = config_info[0..-2]+"_"+config_info[-1]
+              end
               config_file = "/"+config_file
             end
             if config_file =~ /hostconfig/
@@ -543,6 +553,11 @@ if file_name !~ /template|operatingsystemupdate/
               config_file = config_file.gsub(/^_/,"")
               config_file = config_file.gsub(/_/,"/")
               config_file = "/"+config_file
+              config_file = config_file.gsub(/bash\/profile$/,"bash_profile")
+              if config_file =~ /attr$|class$|privs$|warn$/
+                config_info = config_file.split(/\//)
+                config_file = config_info[0..-2]+"_"+config_info[-1]
+              end
             end
             if File.exists?(config_file)
               if file_info =~ /line/
@@ -615,9 +630,13 @@ if file_name !~ /template|operatingsystemupdate/
           end
         end
         if kernel == "SunOS"
+          if type == "system"
+            parameter = file_info[3..-1].join("_")
+            fact      = Facter::Util::Resolution.exec("cat /etc/system |grep -v '^*' |grep '#{parameter}' |cut -f2 -d= |sed 's/ //g'")
+          end
           if type == "auditclass"
             parameter = file_info[3..-1].join("_")
-            fact      = Facter::Util::Resolution.exec("cat /etc/security/audit_class |grep '#{parameter}'")
+            fact      = Facter::Util::Resolution.exec("cat /etc/security/audit_class |grep -v '^#' |'}grep '#{parameter}'")
           end
           if type =~ /xresourcesfiles|xsysresourcesfiles/
             dir_name = "/usr/dt/config"
