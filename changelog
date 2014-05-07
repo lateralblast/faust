@@ -49,3 +49,5 @@
 # Added extra handling for file names with underscores
 # 0.2.5: Wed  7 May 2014 15:21:15 EST
 # Added NIS entries
+# 0.2.6: Thu  8 May 2014 06:22:03 EST
+# Added symlink type

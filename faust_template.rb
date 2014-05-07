@@ -117,6 +117,10 @@ if file_name !~ /template|operatingsystemupdate/
             fact = fact.join(",")
           end
         end
+        if type == "symlink"
+          file_name = file_info[3..-1].join("/")
+          fact      = File.readlink(file_name)
+        end
         if type =~ /cron/
           if type =~ /allow|deny/
             file_name = file_name.gsub(/cron/,"")
@@ -479,6 +483,10 @@ if file_name !~ /template|operatingsystemupdate/
             fact = Facter::Util::Resolution.exec("cat /etc/pam..d/#{mod_name}' |grep '#{parameter}'")
           end
         end
+        if type == "ntp"
+          parameter = file_info[3..-1].join(" ")
+          fact = %x[cat /etc/ntp.conf |grep '#{parameter}']
+        end
         if type == "file"
           separator = " "
           comment   = "#"
@@ -686,6 +694,9 @@ if file_name !~ /template|operatingsystemupdate/
           end
         end
         if kernel == "Darwin"
+          if type == "hostconfig"
+            fact = Facter::Util::Resolution.exec("cat /private/etc/hostconfig |grep '#{parameter}' |cut -f2 -d= |sed 's/ //g'")
+          end
           if type == "managednode"
             fact = Facter::Util::Resolution.exec("pwpolicy -n -getglobalpolicy 2>&1")
             if fact =~ /Error/
