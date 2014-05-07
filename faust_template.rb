@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.2.4
+# Version:      0.2.7
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -442,17 +442,19 @@ if file_name !~ /template|operatingsystemupdate/
               prefix = type.gsub(/configfile/,"")
             end
           end
-          if prefix =~ /^audit|^exec/
+          case prefix
+          when /^audit|^exec/
             prefix      = prefix.gsub(/class/,"_class")
             config_file = "/etc/security/"+prefix
+          when /^cron/
+            config_file = "/etc/default/cron"
+          when /system/
+            config_file = "/etc/system"
           else
-            if prefix == "system"
-              config_file = "/etc/system"
-            else
-              search_file = prefix+".conf"
-            end
+            search_file = prefix+".conf"
+            config_file = ""
           end
-          config_file = ""
+          if prefix =~ /^audit|^exec|^exec/
           if config_file !~ /[A-z]/
             config_file_list = []
             dir_list = [ '/etc' '/etc/sfw', '/etc/apache', '/etc/apache2',
@@ -647,6 +649,10 @@ if file_name !~ /template|operatingsystemupdate/
           end
         end
         if kernel == "SunOS"
+          if type == "cron"
+            config_file = "/etc/default/cron"
+            fact        = Facter::Util::Resolution.exec("cat /etc/default/cron |grep '#{parameter} |cut -f2 -d= |sed 's/ //g'")
+          end
           if type == "system"
             parameter = file_info[3..-1].join("_")
             fact      = Facter::Util::Resolution.exec("cat /etc/system |grep -v '^*' |grep '#{parameter}' |cut -f2 -d= |sed 's/ //g'")
