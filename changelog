@@ -53,3 +53,5 @@
 # Added symlink type
 # 0.2.7: Thu  8 May 2014 09:39:25 EST
 # Added cron type for Solaris
+# 0.2.8: Thu  8 May 2014 12:32:31 EST
+# Added login and policy type for Solaris

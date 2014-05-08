@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.2.7
+# Version:      0.2.8
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -450,6 +450,8 @@ if file_name !~ /template|operatingsystemupdate/
             config_file = "/etc/default/cron"
           when /system/
             config_file = "/etc/system"
+          when /policy/
+            config_file = "/etc/security/policy.conf"
           else
             search_file = prefix+".conf"
             config_file = ""
@@ -649,9 +651,13 @@ if file_name !~ /template|operatingsystemupdate/
           end
         end
         if kernel == "SunOS"
-          if type == "cron"
-            config_file = "/etc/default/cron"
-            fact        = Facter::Util::Resolution.exec("cat /etc/default/cron |grep '#{parameter} |cut -f2 -d= |sed 's/ //g'")
+          if type =~ /cron|login/
+            config_file = "/etc/default/"+type
+            fact        = Facter::Util::Resolution.exec("cat /etc/default/#{type} |grep '#{parameter} |cut -f2 -d= |sed 's/ //g'")
+          end
+          if type == "policy"
+            config_file = "/etc/security/policy.conf"
+            fact        = Facter::Util::Resolution.exec("cat /etc/security/policy.conf |grep '#{parameter} |cut -f2 -d= |sed 's/ //g'")
           end
           if type == "system"
             parameter = file_info[3..-1].join("_")
