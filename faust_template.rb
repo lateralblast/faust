@@ -107,23 +107,47 @@ def handle_sunos(type,file_info,fact)
   return fact
 end
 
+# Get conig file
+
+def get_config_file(type)
+  config_file_list = []
+  dir_list = [ '/etc' '/etc/sfw', '/etc/apache', '/etc/apache2',
+               '/etc/default', '/etc/sysconfig', '/usr/local/etc',
+               '/usr/sfw/etc', '/opt/sfw/etc', '/etc/cups',
+               '/etc/default', '/etc/security' ]
+  dir_list.each do |dir_name|
+    config_file=dir_name+"/"+search_file
+    if File.exists?(config_file)
+      config_file_list.push(config_file)
+    end
+  end
+  config_file = config_file_list[0]
+  return config_file
+end
+
 # Linux specific facts
 
-def handle_linux(type,file_info,fact)
-  if type == "avahi"
-    parameter = file_info[3]
+def handle_linux(type,file_info,os_distro,fact)
+  if type == /avahi|yum/
+    parameter = file_info[3..-1].join("_")
     fact_name = type+"configfile"
     file_name = Facter.value(fact_name)
-    fact      = Facter::Util::Resolution.exec("cat #{file_name} |grep '#{parameter} |cut -f2 -d= |sed 's/ //g'")
+    if file_name !~ /[A-z]/
+      file_name = get_config_file(type)
+    end
+    if File.exists?(file_name)
+      fact      = Facter::Util::Resolution.exec("cat #{file_name} |grep '#{parameter} |cut -f2 -d= |sed 's/ //g'")
+    end
   end
   if type == "prelinkstatus"
-    fact_name    = mod_name+"_linux_prelinkconfigfile"
-    prelink_file = Facter.value(fact_name)
-    if File.exists?(prelink_file)
-      fact = Facter::Util::Resolution.exec("cat #{prelink_file} |grep PRELINKING |cut -f2 -d= |sed 's/ //g'")
+    fact_name = mod_name+"_linux_prelinkconfigfile"
+    file_name = Facter.value(fact_name)
+    if File.exists?(file_name)
+      fact = Facter::Util::Resolution.exec("cat #{file_name} |grep PRELINKING |cut -f2 -d= |sed 's/ //g'")
     end
   end
   if type == "audit"
+    file_name = file_info.join("_")
     if file_name =~ /_etc_|_var_|_run_|_sbin_/
       parameter = file_info[3..-1].join("/")
     else
@@ -133,7 +157,9 @@ def handle_linux(type,file_info,fact)
         parameter = file_info[3..-1].join(" ")
       end
     end
-    fact = Facter::Util::Resolution.exec("cat /etc/audit/audit.rules |grep ' #{parameter} '")
+    if File.exists?(file_name)
+      fact = Facter::Util::Resolution.exec("cat /etc/audit/audit.rules |grep ' #{parameter} '")
+    end
   end
   return fact
 end
@@ -442,18 +468,7 @@ def handle_configfile(type,file_info)
     config_file = ""
   end
   if config_file !~ /[A-z]/
-    config_file_list = []
-    dir_list = [ '/etc' '/etc/sfw', '/etc/apache', '/etc/apache2',
-                 '/etc/default', '/etc/sysconfig', '/usr/local/etc',
-                 '/usr/sfw/etc', '/opt/sfw/etc', '/etc/cups',
-                 '/etc/default', '/etc/security' ]
-    dir_list.each do |dir_name|
-      config_file=dir_name+"/"+search_file
-      if File.exists?(config_file)
-        config_file_list.push(config_file)
-      end
-    end
-    fact = config_file_list[0]
+    fact = get_config_file(type)
   end
   return fact
 end

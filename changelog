@@ -57,3 +57,5 @@
 # Added login and policy type for Solaris
 # 0.2.9: Thu  8 May 2014 20:44:07 EST
 # Split code into functions to make it easier to maintain
+# 0.3.0: Fri  9 May 2014 07:33:27 EST
+# Added yum type for Linux
