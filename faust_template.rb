@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.2.9
+# Version:      0.3.1
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -109,41 +109,40 @@ end
 
 # Get conig file
 
-def get_config_file(type)
-  config_file_list = []
-  dir_list = [ '/etc' '/etc/sfw', '/etc/apache', '/etc/apache2',
-               '/etc/default', '/etc/sysconfig', '/usr/local/etc',
-               '/usr/sfw/etc', '/opt/sfw/etc', '/etc/cups',
-               '/etc/default', '/etc/security' ]
-  dir_list.each do |dir_name|
-    config_file=dir_name+"/"+search_file
-    if File.exists?(config_file)
-      config_file_list.push(config_file)
+def get_config_file(kernel,modname,type)
+  config_file = modname+"_"+kernel.downcase+"_"+type+"configfile"
+  config_file = Facter.value(config_file)
+  if config_file !~ /[A-z]/
+    config_file_list = []
+    dir_list = [ '/etc' '/etc/sfw', '/etc/apache', '/etc/apache2',
+                 '/etc/default', '/etc/sysconfig', '/usr/local/etc',
+                 '/usr/sfw/etc', '/opt/sfw/etc', '/etc/cups',
+                 '/etc/default', '/etc/security' ]
+    dir_list.each do |dir_name|
+      config_file=dir_name+"/"+search_file
+      if File.exists?(config_file)
+        config_file_list.push(config_file)
+      end
     end
+    config_file = config_file_list[0]
   end
-  config_file = config_file_list[0]
   return config_file
 end
 
 # Linux specific facts
 
-def handle_linux(type,file_info,os_distro,fact)
+def handle_linux(kernel,modname,type,file_info,os_distro,fact)
   if type == /avahi|yum/
-    parameter = file_info[3..-1].join("_")
-    fact_name = type+"configfile"
-    file_name = Facter.value(fact_name)
-    if file_name !~ /[A-z]/
-      file_name = get_config_file(type)
-    end
+    parameter   = file_info[3..-1].join("_")
+    config_file = get_config_file(kernel,modname,type)
     if File.exists?(file_name)
-      fact      = Facter::Util::Resolution.exec("cat #{file_name} |grep '#{parameter} |cut -f2 -d= |sed 's/ //g'")
+      fact      = Facter::Util::Resolution.exec("cat #{config_file} |grep '#{parameter} |cut -f2 -d= |sed 's/ //g'")
     end
   end
   if type == "prelinkstatus"
-    fact_name = mod_name+"_linux_prelinkconfigfile"
-    file_name = Facter.value(fact_name)
+    config_file = get_config_file(kernel,modname,type)
     if File.exists?(file_name)
-      fact = Facter::Util::Resolution.exec("cat #{file_name} |grep PRELINKING |cut -f2 -d= |sed 's/ //g'")
+      fact = Facter::Util::Resolution.exec("cat #{config_file} |grep PRELINKING |cut -f2 -d= |sed 's/ //g'")
     end
   end
   if type == "audit"
@@ -287,7 +286,7 @@ def handle_file(kernel,modname,type,subtype,file_info)
         parameter   = parameter.gsub(/\./,':')
       end
       if config_file =~ /apache/
-        config_file = modname+"_"+kernel.downcase+"_"+subtype+"configfile"
+        config_file = modname+"_"+kernel.downcase+"_apacheconfigfile"
         config_file = Facter.value(config_file)
       end
     else
@@ -339,7 +338,7 @@ def handle_file(kernel,modname,type,subtype,file_info)
         line        = line.gsub(/^_/)
       end
       if config_file =~ /apache/
-        config_file = modname+"_"+subtype+"configfile"
+        config_file = modname+"_"+kernel+"_qpacheconfigfile"
         config_file = Facter.value(config_file)
         line        = line.gsub(/^_/,"")
         line        = line.gsub(/_/," ")
@@ -420,11 +419,10 @@ end
 # Handle apache type
 
 def handle_apache(kernel,modname,type,file_info)
-  parameter = file_info[3]
-  config_file = modname+"_"+kernel.downcase+"_"+type+"configfile"
-  config_file = Facter.value(config_file)
+  parameter   = file_info[3]
+  config_file = get_config_file(kernel,modname,type)
   if File.exists?(config_file)
-    fact        = Facter::Util::Resolution.exec("cat #{config_file} |grep '^#{parameter}' |awk '{print $2}' |sed 's/ $//g'")
+    fact = Facter::Util::Resolution.exec("cat #{config_file} |grep '^#{parameter}' |awk '{print $2}' |sed 's/ $//g'")
   end
   return fact
 end
@@ -432,9 +430,8 @@ end
 # Handle cups type
 
 def handle_cups(kernel,modname,type,file_info)
-  parameter = file_info[3]
-  config_file = modname+"_"+kernel.downcase+"_"+type+"configfile"
-  config_file = Facter.value(config_file)
+  parameter   = file_info[3]
+  config_file = get_config_file(kernel,modname,type)
   if File.exists?(config_file)
     fact        = Facter::Util::Resolution.exec("cat #{config_file} |grep '^#{parameter}' |awk '{print $2}' |sed 's/ $//g'")
   end
@@ -468,9 +465,20 @@ def handle_configfile(type,file_info)
     config_file = ""
   end
   if config_file !~ /[A-z]/
-    fact = get_config_file(type)
+    config_file_list = []
+    dir_list = [ '/etc' '/etc/sfw', '/etc/apache', '/etc/apache2',
+                 '/etc/default', '/etc/sysconfig', '/usr/local/etc',
+                 '/usr/sfw/etc', '/opt/sfw/etc', '/etc/cups',
+                 '/etc/default', '/etc/security' ]
+    dir_list.each do |dir_name|
+      config_file=dir_name+"/"+search_file
+      if File.exists?(config_file)
+        config_file_list.push(config_file)
+      end
+    end
+    config_file = config_file_list[0]
   end
-  return fact
+  return config_file
 end
 
 # Handle services type
@@ -994,7 +1002,7 @@ if file_name !~ /template|operatingsystemupdate/
           fact = handle_file(kernel,modname,type,subtype,file_info)
         end
         if kernel == "Linux"
-          fact = handle_linux(type,file_info,fact)
+          fact = handle_linux(kernel,modname,type,file_info,fact)
         end
         if kernel =~ /Linux|FreeBSD/
           if type == "sysctl"
