@@ -55,3 +55,5 @@
 # Added cron type for Solaris
 # 0.2.8: Thu  8 May 2014 12:32:31 EST
 # Added login and policy type for Solaris
+# 0.2.9: Thu  8 May 2014 20:44:07 EST
+# Split code into functions to make it easier to maintain
