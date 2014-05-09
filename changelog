@@ -71,3 +71,5 @@
 # Added passwd type for Solaris
 # 0.3.6: Fri  9 May 2014 16:44:57 EST
 # Added stickybitfiles type
+# 0.3.7: Fri  9 May 2014 20:27:21 EST
+# Added ssh type

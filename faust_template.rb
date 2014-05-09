@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.3.6
+# Version:      0.3.7
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -127,10 +127,11 @@ def get_config_file(kernel,modname,type)
   config_file = Facter.value(config_file)
   if config_file !~ /[A-z]/
     config_file_list = []
-    dir_list = [ '/etc' '/etc/sfw', '/etc/apache', '/etc/apache2',
-                 '/etc/default', '/etc/sysconfig', '/usr/local/etc',
-                 '/usr/sfw/etc', '/opt/sfw/etc', '/etc/cups',
-                 '/etc/default', '/etc/security' ]
+    dir_list = [
+      '/etc' '/etc/sfw', '/etc/apache', '/etc/apache2', '/etc/default',
+      '/etc/sysconfig', '/usr/local/etc', '/usr/sfw/etc', '/opt/sfw/etc',
+      '/etc/cups', '/etc/ssh', '/etc/default', '/etc/security'
+    ]
     dir_list.each do |dir_name|
       config_file=dir_name+"/"+search_file
       if File.exists?(config_file)
@@ -933,6 +934,17 @@ def handle_sudo(kernel,modname,type,file_info)
   return fact
 end
 
+# Handle ssh type
+
+def handle_ssh(kernel,modname,type,file_info)
+  config_file = get_config_file(kernel,modname,type)
+  parameter   = file_info[3]
+  if File.exists?(config_file)
+    fact = Facter::Util::Resolution.exec("cat #{config_file} |grep #{parameter}")
+  end
+  return fact
+end
+
 # Main code
 
 if file_name !~ /template|operatingsystemupdate/
@@ -1022,6 +1034,9 @@ if file_name !~ /template|operatingsystemupdate/
         end
         if type == "sudo"
           fact = handle_sudo(kernel,modname,type,file_info)
+        end
+        if type == "ssh"
+          fact = handle_ssh(kernel,modname,type,file_info)
         end
         if type == "groupexists"
           fact = handle_groupexists(file_info)
