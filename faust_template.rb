@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.3.3
+# Version:      0.3.4
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -887,6 +887,17 @@ def handle_readablefiles_types(type)
   return fact
 end
 
+# Handle sudo type
+
+def handle_sudo(kernel,modname,type,file_info)
+  config_file = get_config_file(kernel,modname,type)
+  parameter   = file_info[3]
+  if File.exists?(config_file)
+    fact = Facter::Util::Resolution.exec("cat #{config_file} |grep #{parameter}")
+  end
+  return fact
+end
+
 # Main code
 
 if file_name !~ /template|operatingsystemupdate/
@@ -970,6 +981,9 @@ if file_name !~ /template|operatingsystemupdate/
         end
         if type == "inactivewheelusers"
           fact = handle_inactivewheelusers()
+        end
+        if type == "sudo"
+          fact = handle_sudo(kernel,modname,type,file_info)
         end
         if type == "groupexists"
           fact = handle_groupexists(file_info)

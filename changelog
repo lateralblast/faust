@@ -65,3 +65,5 @@
 # Added sys-suspend type for Solaris
 # 0.3.3: Fri  9 May 2014 12:30:08 EST
 # Added suidfiles type
+# 0.3.4: Fri  9 May 2014 14:19:02 EST
+# Added sudo type for sudoers file
