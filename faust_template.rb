@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.3.1
+# Version:      0.3.2
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -51,7 +51,7 @@ fs_search = "no"
 # Solaris specific facts
 
 def handle_sunos(type,file_info,fact)
-  if type =~ /cron|login/
+  if type =~ /cron|login|sys-suspend/
     config_file = "/etc/default/"+type
     fact        = Facter::Util::Resolution.exec("cat /etc/default/#{type} |grep '#{parameter} |cut -f2 -d= |sed 's/ //g'")
   end
@@ -454,8 +454,8 @@ def handle_configfile(type,file_info)
   when /^audit|^exec/
     prefix      = prefix.gsub(/class/,"_class")
     config_file = "/etc/security/"+prefix
-  when /^cron/
-    config_file = "/etc/default/cron"
+  when /^cron|sys-suspend/
+    config_file = "/etc/default/#{prefix}"
   when /system/
     config_file = "/etc/system"
   when /policy/

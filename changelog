@@ -61,3 +61,5 @@
 # Added yum type for Linux
 # 0.3.1: Fri  9 May 2014 08:33:35 EST
 # Cleaned up config file name determination
+# 0.3.2: Fri  9 May 2014 12:08:03 EST
+# Added sys-suspend type for Solaris
