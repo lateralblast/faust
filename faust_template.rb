@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.3.5
+# Version:      0.3.6
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -102,6 +102,19 @@ def handle_sunos(type,file_info,fact)
       driver    = file_info[3]
       parameter = "_"+file_info[4..-2].join("_")
       fact = Facter::Util::Resolution.exec("ipadm show-prop #{driver} -co current #{parameter}")
+    end
+  end
+  return fact
+end
+
+# FreeBSD specific facts
+
+def handle_freebsd(kernel,modname,type,file_info,fact)
+  if type == "login"
+    parameter   = file_info[3..-1].join("_")
+    config_file = get_config_file(kernel,modname,type)
+    if File.exists?
+      fact = Facter::Util::Resolution.exec("cat #{config_file} |grep -v '^#' |grep #{parameter} |cut -f2 -d= |sed 's/ //g'")
     end
   end
   return fact
@@ -849,7 +862,29 @@ def handle_suidfiles(kernel)
   end
   if kernel == "Linux"
     find_command = "df --local -P | awk {'if (NR!=1) print $6'} \
-    | xargs -I '{}' find '{}' -xdev -type f -perm -4000 -print"
+    | xargs -I '{}' find '{}' -xdev -type f -perm -4000 -o -perm -2000 -print"
+  end
+  fact = %x[#{find_command}]
+  fact = fact.gsub(/\n/,",")
+  return fact
+end
+
+# Handle stickybitfiles types
+
+def handle_stickybitfiles(kernel)
+  if kernel == "SunOS"
+    find_command = "find / \( -fstype nfs -o -fstype cachefs \
+    -o -fstype autofs -o -fstype ctfs -o -fstype mntfs \
+    -o -fstype objfs -o -fstype proc \) -prune \
+    -o -type f \( -perm -0002 -o -perm -1000 \) -print"
+  end
+  if kernel == "AIX"
+    find_command = "find / \( -fstype jfs -o -fstype jfs2 \) \
+    \( -perm -00002 -o -perm -01000 \) -typ e f -ls"
+  end
+  if kernel == "Linux"
+    find_command = "df --local -P | awk {'if (NR!=1) print $6'} \
+    | xargs -I '{}' find '{}' -xdev -type f -perm -0002 -o -perm -1000 -print"
   end
   fact = %x[#{find_command}]
   fact = fact.gsub(/\n/,",")
@@ -970,7 +1005,10 @@ if file_name !~ /template|operatingsystemupdate/
         end
         if $fs_search == "yes"
           if type == "suidfiles"
-            fact = handlesuidfiles(kernel)
+            fact = handle_suidfiles(kernel)
+          end
+          if type == "stickybitfiles"
+            fact = handle_stickybitfiles(kernel)
           end
           if type == "unownedfiles"
             fact = handle_unownedfile(kernel,type,fact_info)
@@ -1058,6 +1096,9 @@ if file_name !~ /template|operatingsystemupdate/
         end
         if kernel == "Darwin"
           fact = handle_darwin(modname,type,subtype,file_info,fact)
+        end
+        if kernel == "FreeBSD"
+          fact = handle_freebsd(kernel,modname,type,file_info,fact)
         end
         if fact !~ /[0-9]|[A-z]/
           fact = ""
