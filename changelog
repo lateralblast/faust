@@ -63,3 +63,5 @@
 # Cleaned up config file name determination
 # 0.3.2: Fri  9 May 2014 12:08:03 EST
 # Added sys-suspend type for Solaris
+# 0.3.3: Fri  9 May 2014 12:30:08 EST
+# Added suidfiles type

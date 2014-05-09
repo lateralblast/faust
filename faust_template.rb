@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.3.2
+# Version:      0.3.3
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -44,7 +44,7 @@ file_name = File.basename(file_name,".*")
 # Doing file system searches takes time
 # Only enable it if it's needed
 
-fs_search = "no"
+$fs_search = "no"
 
 # Split the coe into some functions to make it more maintainable
 
@@ -834,6 +834,28 @@ def handle_cron(kernel,type)
   return fact
 end
 
+# Handle suidfiles types
+
+def handle_suidfiles(kernel)
+  if kernel == "SunOS"
+    find_command = "find / \( -fstype nfs -o -fstype cachefs \
+    -o -fstype autofs -o -fstype ctfs -o -fstype mntfs \
+    -o -fstype objfs -o -fstype proc \) -prune \
+    -o -type f \( -perm -4000 -o -perm -2000 \) -print"
+  end
+  if kernel == "AIX"
+    find_command = "find / \( -fstype jfs -o -fstype jfs2 \) \
+    \( -perm -04000 -o -perm -02000 \) -typ e f -ls"
+  end
+  if kernel == "Linux"
+    find_command = "df --local -P | awk {'if (NR!=1) print $6'} \
+    | xargs -I '{}' find '{}' -xdev -type f -perm -4000 -print"
+  end
+  fact = %x[#{find_command}]
+  fact = fact.gsub(/\n/,",")
+  return fact
+end
+
 # Handle readable files types
 
 def handle_readablefiles_types(type)
@@ -935,11 +957,16 @@ if file_name !~ /template|operatingsystemupdate/
         if type =~ /directorylisting/
           fact = handle_directorylisting(type,file_info)
         end
-        if type == "unownedfiles" and fs_search == "yes"
-          fact = handle_unownedfile(kernel,type,fact_info)
-        end
-        if type == "worldwritablefiles" and fs_search == "yes"
-          fact = handle_worldwritable(kernel)
+        if $fs_search == "yes"
+          if type == "suidfiles"
+            fact = handlesuidfiles(kernel)
+          end
+          if type == "unownedfiles"
+            fact = handle_unownedfile(kernel,type,fact_info)
+          end
+          if type == "worldwritablefiles"
+            fact = handle_worldwritable(kernel)
+          end
         end
         if type == "inactivewheelusers"
           fact = handle_inactivewheelusers()
