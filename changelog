@@ -79,3 +79,7 @@
 # Cleaned up code and added hosts.allow and hosts.deny types
 # 0.4.0: Sun 11 May 2014 18:58:43 EST
 # Updated hosts.allow and hosts.deny support and documentation
+# 0.4.1: Sun 11 May 2014 19:04:17 EST
+# Added SNMP type
+# 0.4.2: Sun 11 May 2014 19:54:02 EST
+# Added invalidshells type

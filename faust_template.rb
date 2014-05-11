@@ -46,10 +46,10 @@ file_name = File.basename(file_name,".*")
 
 $fs_search = "no"
 
-def get_paramater_value(kernel,modname,type,file_info)
+def get_parameter_value(kernel,modname,type,file_info)
   config_file = get_config_file(kernel,modname,type)
   if File.exists?(config_file)
-    if type =~ /hostsallow|hostsdeny/
+    if type =~ /hostsallow|hostsdeny|snmp/
       parameter = file_info[3..-1].join(" ")
       fact = %x[cat #{config_file} |grep -v '#' |grep '#{parameter}']
       fact = fact.gsub(/\n/,",")
@@ -861,6 +861,16 @@ def handle_invalidsystem_types(kernel,type)
     invalid_list = %x[awk -F: '$3 == "0" { print $1 }' /etc/passwd |grep -v root]
     invalid_list = invalid_list.split("\n")
   end
+  if type == "invalidshells"
+    if File.exists?("/etc/shells")
+    shell_list = %x[cat /etc/shells]
+    shell_list = shell_list.split("\n")
+    shell_list.each do |shell|
+      if !File.exists?(shell)
+        invalid_list.push(shell)
+      end
+    end
+  end
   fact = invalid_list.join(",")
   return fact
 end
@@ -1106,7 +1116,7 @@ if file_name !~ /template|operatingsystemupdate/
           fact = handle_inactivewheelusers()
         when "sudo"
           fact = handle_sudo(kernel,modname,type,file_info)
-        when /ssh|krb5|hostsallow|hostsdeny/
+        when /ssh|krb5|hostsallow|hostsdeny|snmp/
           fact = get_paramater_value(kernel,modname,type,file_info)
         when "groupexists"
           fact = handle_groupexists(file_info)
