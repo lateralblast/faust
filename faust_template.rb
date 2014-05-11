@@ -1094,7 +1094,7 @@ if file_name !~ /template|operatingsystemupdate/
           fact = handle_inactivewheelusers()
         when "sudo"
           fact = handle_sudo(kernel,modname,type,file_info)
-        when /ssh|krb5|hosts.allow|hosts.deny/
+        when /ssh|krb5|hosts\.allow|hosts\.deny/
           fact = get_paramater_value(kernel,modname,type,file_info)
         when "groupexists"
           fact = handle_groupexists(file_info)
