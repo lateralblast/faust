@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.4.0
+# Version:      0.4.3
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -45,6 +45,16 @@ file_name = File.basename(file_name,".*")
 # Only enable it if it's needed
 
 $fs_search = "no"
+
+# Get the members of a group
+
+def get_group_members(type)
+  group = type.gsub(/groupmembers/,"")
+  fact  = Facter::Util::Resolution.exec("cat /etc/group |grep '#{group}:' |cut -f4 -d:")
+  return fact
+end
+
+# Get the value of a parameter from a file
 
 def get_parameter_value(kernel,modname,type,file_info)
   config_file = get_config_file(kernel,modname,type)
@@ -1104,6 +1114,8 @@ if file_name !~ /template|operatingsystemupdate/
           fact = handle_cron(kernel,type)
         when /^nis/
           fact = handle_nis(type)
+        when /groupmembers/
+          fact = get_group_members(type)
         when /xml|plist|launchctl/
           fact = handle_xml_types(type,file_info)
         when /syslog/
