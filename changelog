@@ -83,3 +83,7 @@
 # Added SNMP type
 # 0.4.2: Sun 11 May 2014 19:54:02 EST
 # Added invalidshells type
+# 0.4.3: Mon 12 May 2014 06:22:35 EST
+# Added *groupmembers type
+# 0.4.4: Mon 12 May 2014 08:25:35 EST
+# Cleaned up services code

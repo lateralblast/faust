@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.4.3
+# Version:      0.4.4
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -295,12 +295,6 @@ end
 
 # AIX specific facts
 
-def handle_aix_rctcp()
-  fact = %x[cat /etc/rc.tcpip |grep -v '^#' |awk '{print $2}']
-  fact = fact.gsub(/\n/,",")
-  return fact
-end
-
 def handle_aix_trustchk(file_info)
   parameter = file_info[3..-1].join("_")
   fact = Facter::Util::Resolution.exec("/usr/sbin/trustchk -p #{parameter} 2>&1 |cut -f2 -d=")
@@ -317,8 +311,6 @@ end
 
 def handle_aix(type,file_info,fact)
   case type
-  when "rctcp"
-    fact = handle_aix_rctcp()
   when "trustchk"
     handle_aix_trustchk(file_info)
   when "lssec"
@@ -597,7 +589,12 @@ end
 
 def handle_services(kernel,type)
   fact = ""
-  if type =~ /system/
+  if type = "rctcpservices"
+    if kernel = "AIX"
+      fact = %x[cat /etc/rc.tcpip |grep -v '^#' |awk '{print $2}']
+    end
+  end
+  if type =~ "systemservices"
     if kernel == "Darwin"
       fact = %x[launchctl list |awk '{print $3}' |grep -v '^Label']
     end
@@ -609,40 +606,26 @@ def handle_services(kernel,type)
       end
     end
   end
-  if type =~ /init/
+  if type == "startupservices"
     fact = %x[find /etc/rc*.d -type f |grep -v '_[A-z]']
   end
   if type =~ /inet/
     if type =~ /xinet/
-      fact = %x[grep enabled /etc/xinetd.d/* |cut -f1 -d:]
+      if kernel == "Linux"
+        fact = %x[grep enabled /etc/xinetd.d/* |cut -f1 -d:]
+      end
     else
       fact = %x[cat /etc/inetd.conf |grep -v '^#' |awk '{print $1}']
     end
   end
-  fact = fact.gsub(/\n/,",")
-  return fact
-end
-
-# Handle inittab type
-
-def handle_inittab(kernel,type,file_info)
-  if kernel == "AIX"
-    fact = %x[cat /etc/inittab |grep -v '^#' |cut -f1 -d:]
-  else
-    fact = %x[lsitab -a |grep -v '^#' |cut -f1 -d:]
+  if type = "inittabservices"
+    if kernel == "AIX"
+      fact = %x[cat /etc/inittab |grep -v '^#' |cut -f1 -d:]
+    else
+      fact = %x[lsitab -a |grep -v '^#' |cut -f1 -d:]
+    end
   end
   fact = fact.gsub(/\n/,",")
-  return fact
-end
-
-# Handle inetd type
-
-def handle_inetd()
-  if File.exists?("/etc/inetd.conf")
-    fact = %x[cat /etc/inetd.conf | grep -v '^#' | awk '{print $1}']
-    fact = fact.split("\n")
-    fact = fact.join(",")
-  end
   return fact
 end
 
@@ -1148,10 +1131,6 @@ if file_name !~ /template|operatingsystemupdate/
           fact = handle_installedpackages(kernel,os_distro)
         when "exists"
           fact = handle_exists(file_info)
-        when "inetd"
-          fact = handle_inetd()
-        when "inittab"
-          fact = handle_inittab(kernel,type,file_info)
         when /services/
           fact = handle_services(kernel,type)
         when /duplicate/
