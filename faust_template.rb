@@ -49,7 +49,7 @@ $fs_search = "no"
 def get_paramater_value(kernel,modname,type,file_info)
   config_file = get_config_file(kernel,modname,type)
   if File.exists?(config_file)
-    if type =~ /hosts\.allow|hosts\.deny/
+    if type =~ /hostsallow|hostsdeny/
       parameter = file_info[3..-1].join(" ")
       fact = %x[cat #{config_file} |grep -v '#' |grep '#{parameter}']
       fact = fact.gsub(/\n/,",")
@@ -167,7 +167,8 @@ def get_config_file(kernel,modname,type)
     dir_list = [
       '/etc' '/etc/sfw', '/etc/apache2', '/etc/apache', '/etc/default',
       '/etc/sysconfig', '/usr/local/etc', '/usr/sfw/etc', '/opt/sfw/etc',
-      '/etc/cups', '/etc/ssh', '/etc/default', '/etc/security', '/etc/krb5'
+      '/etc/cups', '/etc/ssh', '/etc/default', '/etc/security', '/etc/krb5',
+      '/etc/snmp'
     ]
     dir_list.each do |dir_name|
       config_file=dir_name+"/"+search_file
@@ -257,6 +258,11 @@ def handle_darwin_pwpolicy(modname,subtype)
   return fact
 end
 
+def handle_darwin_software_update_schedule()
+  fact = Facter::Util::Resolution.exec("sudo softwareupdate --schedule |awk '{print $4}'")
+  return fact
+end
+
 def handle_darwin(kernel,modname,type,subtype,file_info,fact)
   case type
   when "hostconfig"
@@ -271,6 +277,8 @@ def handle_darwin(kernel,modname,type,subtype,file_info,fact)
     fact = handle_darwin_defaults(subtype,file_info)
   when "pwpolicy"
     fact = handle_darwin_pwpolicy(modname,subtype)
+  when "softwareupdateschedule"
+    fact = handle_darwin_software_update_schedule()
   end
   return fact
 end
@@ -388,7 +396,7 @@ def handle_file(kernel,modname,type,subtype,file_info)
     if config_file =~ /hostconfig/
       separator = "="
     end
-    if config_file =~ /hosts\.allow|hosts\.deny/
+    if config_file =~ /hosts\,allow|hosts\,deny/
       separator = ":"
     end
     if File.exists?(config_file)
@@ -549,11 +557,15 @@ def handle_configfile(kernel,type,file_info)
     config_file = "/etc/system"
   when /policy/
     config_file = "/etc/security/policy.conf"
+  when /hostsallow/
+    config_file = "/etc/hosts.allow"
+  when /hostsdeny/
+    config_file = "/etc/hosts.deny"
   else
     config_file = ""
   end
-  search_file = prefix+".conf"
   if config_file !~ /[A-z]/
+    search_file = prefix+".conf"
     config_file_list = []
     dir_list = [
       '/etc' '/etc/sfw', '/etc/apache', '/etc/apache2', '/etc/default',
@@ -1094,7 +1106,7 @@ if file_name !~ /template|operatingsystemupdate/
           fact = handle_inactivewheelusers()
         when "sudo"
           fact = handle_sudo(kernel,modname,type,file_info)
-        when /ssh|krb5|hosts\.allow|hosts\.deny/
+        when /ssh|krb5|hostsallow|hostsdeny/
           fact = get_paramater_value(kernel,modname,type,file_info)
         when "groupexists"
           fact = handle_groupexists(file_info)
