@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.3.9
+# Version:      0.4.0
 # Release:      1
 # License:      Open Source
 # Group:        System
