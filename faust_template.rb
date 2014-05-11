@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.3.7
+# Version:      0.3.9
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -46,63 +46,103 @@ file_name = File.basename(file_name,".*")
 
 $fs_search = "no"
 
-# Split the coe into some functions to make it more maintainable
+def get_paramater_value(kernel,modname,type,file_info)
+  config_file = get_config_file(kernel,modname,type)
+  if File.exists?(config_file)
+    if type =~ /hosts\.allow|hosts\.deny/
+      parameter = file_info[3..-1].join(" ")
+      fact = %x[cat #{config_file} |grep -v '#' |grep '#{parameter}']
+      fact = fact.gsub(/\n/,",")
+    else
+      parameter = file_info[3..-1].join("_")
+      if type =~ /ssh/
+        fact = Facter::Util::Resolution.exec("cat #{config_file} |grep -v '^#' |grep '#{parameter}' |awk '{print $2}'")
+      else
+        fact = Facter::Util::Resolution.exec("cat #{config_file} |grep -v '^#' |grep '#{parameter}' |cut -f2 -d= |sed 's/ //g'")
+      end
+    end
+  end
+  return fact
+end
 
 # Solaris specific facts
 
-def handle_sunos(type,file_info,fact)
-  if type =~ /cron|login|sys-suspend|passwd/
-    config_file = "/etc/default/"+type
-    fact        = Facter::Util::Resolution.exec("cat /etc/default/#{type} |grep '#{parameter} |cut -f2 -d= |sed 's/ //g'")
+def handle_sunos_resourcefiles(type,file_info)
+  dir_name = "/usr/dt/config"
+  if File.directory?(dir_name)
+    if type == "xresourcesfiles"
+      fact = %x[find #{dir_name} -name Xresources]
+    end
+    if type == "xsysresourcefiles"
+      fact = %x[find #{dir_name} -name sys.resources]
+    end
+    fact = fact.gsub(/\n/,",")
   end
-  if type == "policy"
-    config_file = "/etc/security/policy.conf"
-    fact        = Facter::Util::Resolution.exec("cat /etc/security/policy.conf |grep '#{parameter} |cut -f2 -d= |sed 's/ //g'")
-  end
-  if type == "system"
-    parameter = file_info[3..-1].join("_")
-    fact      = Facter::Util::Resolution.exec("cat /etc/system |grep -v '^*' |grep '#{parameter}' |cut -f2 -d= |sed 's/ //g'")
-  end
-  if type == "auditclass"
-    parameter = file_info[3..-1].join("_")
-    fact      = Facter::Util::Resolution.exec("cat /etc/security/audit_class |grep -v '^#' |'}grep '#{parameter}'")
-  end
-  if type =~ /xresourcesfiles|xsysresourcesfiles/
-    dir_name = "/usr/dt/config"
-    if File.directory?(dir_name)
-      if type == "xresourcesfiles"
-        fact = %x[find #{dir_name} -name Xresources]
-      end
-      if type == "xsysresourcefiles"
-        fact = %x[find #{dir_name} -name sys.resources]
-      end
+  return fact
+end
+
+def handle_sunos_coreadm(type,file_info)
+  parameter = file_info[3..-1].join(" ")
+  fact      = Facter::Util::Resolution.exec("coreadm |grep '#{parameter}' |cut -f2 -d: |sed 's/^ //g'")
+  return fact
+end
+
+def handle_sunos_logadm(type,file_info)
+  log_name = "/"+file_info[3..-1].join("/")
+  fact     = Facter::Util::Resolution.exec("logadm -V |grep -v '^#' |grep '#{log_name}'")
+  return fact
+end
+
+def handle_sunos_ndd(type,file_info,os_version)
+  if os_version =~ /10/
+    driver    = "/dev/"+file_info[3]
+    parameter = file_info[4..-2].join("_")
+    if parameter == "tcp_extra_priv_ports_add"
+      fact = Facter::Util::Resolution.exec("ndd -get #{driver} tcp_extra_priv_ports #{parameter}")
+    else
+      fact = Facter::Util::Resolution.exec("ndd -get #{driver} #{parameter}")
     end
   end
-  if type == "coreadm"
-    parameter = file_info[3..-1].join(" ")
-    fact      = Facter::Util::Resolution.exec("coreadm |grep '#{parameter}' |cut -f2 -d: |sed 's/^ //g'")
+  return fact
+end
+
+def handle_sunos_ipadm(type,file_info,os_version)
+  if os_version =~ /11/
+    driver    = file_info[3]
+    parameter = "_"+file_info[4..-2].join("_")
+    fact = Facter::Util::Resolution.exec("ipadm show-prop #{driver} -co current #{parameter}")
   end
-  if type == "logadm"
-    log_name = "/"+file_info[3..-1].join("/")
-    fact = Facter::Util::Resolution.exec("logadm -V |grep -v '^#' |grep '#{log_name}'")
-  end
-  if type == "ndd"
-    if os_version =~ /10/
-      driver    = "/dev/"+file_info[3]
-      parameter = file_info[4..-2].join("_")
-      if parameter == "tcp_extra_priv_ports_add"
-        fact = Facter::Util::Resolution.exec("ndd -get #{driver} tcp_extra_priv_ports #{parameter}")
-      else
-        fact = Facter::Util::Resolution.exec("ndd -get #{driver} #{parameter}")
-      end
+  return fact
+end
+
+def handle_sunos_inetadm(file_info)
+  if os_version =~ /10|11/
+    file_info = file_info[3..-1].join("_")
+    if file_info =~ /parameter/
+      (service_name,parameter) = file_info.split("_parameter_")
+      service_name = service_name.gsub(/_/,"/")
+      fact = Facter::Util::Resolution.exec("inetadm -l #{service_name} |grep #{parameter} |cut -f2 -d=")
     end
   end
-  if type == "ipadm"
-    if os_version =~ /11/
-      driver    = file_info[3]
-      parameter = "_"+file_info[4..-2].join("_")
-      fact = Facter::Util::Resolution.exec("ipadm show-prop #{driver} -co current #{parameter}")
-    end
+  return fact
+end
+
+def handle_sunos(kernel,modname,type,file_info,fact,os_version)
+  case type
+  when /cron|login|sys-suspend|passwd|system|^audit/
+    fact = get_paramater_value(kernel,modname,type,file_info)
+  when /xresourcesfiles|xsysresourcesfiles/
+    fact = handle_sunos_resourcefiles(type,file_info)
+  when "coreadm"
+    fact = handle_sunos_coreadm(type,file_info)
+  when "logadm"
+    fact = handle_sunos(type,file_info,fact)
+  when "ndd"
+    fact = handle_sunos_ndd(type,file_info,os_version)
+  when "ipadm"
+    fact = handle_sunos_ipadm(type,file_info,os_version)
+  when "inetadm"
+    fact = handle_sunos_inetadm(file_info,os_version)
   end
   return fact
 end
@@ -110,12 +150,9 @@ end
 # FreeBSD specific facts
 
 def handle_freebsd(kernel,modname,type,file_info,fact)
-  if type == "login"
-    parameter   = file_info[3..-1].join("_")
-    config_file = get_config_file(kernel,modname,type)
-    if File.exists?
-      fact = Facter::Util::Resolution.exec("cat #{config_file} |grep -v '^#' |grep #{parameter} |cut -f2 -d= |sed 's/ //g'")
-    end
+  case type
+  when /login|rc|sysctl/
+    fact = get_paramater_value(kernel,modname,type,file_info)
   end
   return fact
 end
@@ -128,9 +165,9 @@ def get_config_file(kernel,modname,type)
   if config_file !~ /[A-z]/
     config_file_list = []
     dir_list = [
-      '/etc' '/etc/sfw', '/etc/apache', '/etc/apache2', '/etc/default',
+      '/etc' '/etc/sfw', '/etc/apache2', '/etc/apache', '/etc/default',
       '/etc/sysconfig', '/usr/local/etc', '/usr/sfw/etc', '/opt/sfw/etc',
-      '/etc/cups', '/etc/ssh', '/etc/default', '/etc/security'
+      '/etc/cups', '/etc/ssh', '/etc/default', '/etc/security', '/etc/krb5'
     ]
     dir_list.each do |dir_name|
       config_file=dir_name+"/"+search_file
@@ -145,104 +182,139 @@ end
 
 # Linux specific facts
 
-def handle_linux(kernel,modname,type,file_info,os_distro,fact)
-  if type == /avahi|yum/
-    parameter   = file_info[3..-1].join("_")
-    config_file = get_config_file(kernel,modname,type)
-    if File.exists?(file_name)
-      fact      = Facter::Util::Resolution.exec("cat #{config_file} |grep '#{parameter} |cut -f2 -d= |sed 's/ //g'")
-    end
+def handle_prelink_status(kernel,modname,type)
+  config_file = get_config_file(kernel,modname,type)
+  if File.exists?(file_name)
+    fact = Facter::Util::Resolution.exec("cat #{config_file} |grep PRELINKING |cut -f2 -d= |sed 's/ //g'")
   end
-  if type == "prelinkstatus"
-    config_file = get_config_file(kernel,modname,type)
-    if File.exists?(file_name)
-      fact = Facter::Util::Resolution.exec("cat #{config_file} |grep PRELINKING |cut -f2 -d= |sed 's/ //g'")
-    end
-  end
-  if type == "audit"
-    file_name = file_info.join("_")
-    if file_name =~ /_etc_|_var_|_run_|_sbin_/
-      parameter = file_info[3..-1].join("/")
+  return fact
+end
+
+def handle_linux_audit(file_info)
+  file_name = file_info.join("_")
+  if file_name =~ /_etc_|_var_|_run_|_sbin_/
+    parameter = file_info[3..-1].join("/")
+  else
+    if file_name =~ /_log_/
+      parameter = file_info[3..-1].join("_")
     else
-      if file_name =~ /_log_/
-        parameter = file_info[3..-1].join("_")
-      else
-        parameter = file_info[3..-1].join(" ")
-      end
+      parameter = file_info[3..-1].join(" ")
     end
-    if File.exists?(file_name)
-      fact = Facter::Util::Resolution.exec("cat /etc/audit/audit.rules |grep ' #{parameter} '")
-    end
+  end
+  if File.exists?(file_name)
+    fact = Facter::Util::Resolution.exec("cat /etc/audit/audit.rules |grep ' #{parameter} '")
+  end
+  return fact
+end
+
+def handle_linux(kernel,modname,type,file_info,os_distro,fact)
+  case type
+  when "sysctl"
+    fact = handle_sysctl(type,file_info,fact)
+  when /avahi|yum/
+    fact = get_paramater_value(kernel,modname,type,file_info)
+  when "prelinkstatus"
+    fact = handle_prelink_status(kernel,modname,type)
+  when "audit"
+    fact = handle_linux_audit(file_info)
   end
   return fact
 end
 
 # OS X specific facts
 
-def handle_darwin(modname,type,subtype,file_info,fact)
-  if type == "hostconfig"
-    fact = Facter::Util::Resolution.exec("cat /private/etc/hostconfig |grep '#{parameter}' |cut -f2 -d= |sed 's/ //g'")
+def handle_darwin_managednode()
+  fact = Facter::Util::Resolution.exec("pwpolicy -n -getglobalpolicy 2>&1")
+  if fact =~ /Error/
+    fact = "/Local/Default"
   end
-  if type == "managednode"
-    fact = Facter::Util::Resolution.exec("pwpolicy -n -getglobalpolicy 2>&1")
-    if fact =~ /Error/
-      fact = "/Local/Default"
-    end
+  return fact
+end
+
+def handle_darwin_dscl(subtype,file_info)
+  parameter = file_info[4]
+  if subtype != "root"
+    subtype = subtype.capitalize
   end
-  if type == "pmset"
-    fact = Facter::Util::Resolution.exec("pmset -g |grep '#{subtype}' |awk '{print $2}' |sed 's/ //g'")
-  end
-  if type =~ /dscl|defaults/
-    parameter = file_info[4]
-    if type == "dscl"
-      if subtype != "root"
-        subtype = subtype.capitalize
-      end
-      fact = Facter::Util::Resolution.exec("dscl . -read /Users/#{subtype} #{parameter} 2>&1 |awk -F: '{print $(NF)}' |sed 's/ //g'")
-    end
-    if type == "defaults"
-      fact = Facter::Util::Resolution.exec("defaults read /Library/Preferences/#{subtype} #{parameter} 2>&1 |grep -v default |sed 's/ $//g'")
-    end
-  end
-  if type == "rctcp"
-    fact = %x[cat /etc/rc.tcpip |grep -v '^#' |awk '{print $2}']
-    fact = fact.gsub(/\n/,",")
-  end
-  if type == "pwpolicy"
-    managednode = Facter.value("#{modname}_darwin_system_managednode")
-    fact = Facter::Util::Resolution.exec("pwpolicy -n #{managednode} -getglobalpolicy #{subtype} 2>&1 |cut -f2 -d= |sed 's/ //g'")
+  fact = Facter::Util::Resolution.exec("dscl . -read /Users/#{subtype} #{parameter} 2>&1 |awk -F: '{print $(NF)}' |sed 's/ //g'")
+  return fact
+end
+
+def handle_darwin_defaults(subtype,file_info)
+  parameter = file_info[4]
+  fact      = Facter::Util::Resolution.exec("defaults read /Library/Preferences/#{subtype} #{parameter} 2>&1 |grep -v default |sed 's/ $//g'")
+  return fact
+end
+
+def handle_darwin_pmset(subtype)
+  fact = Facter::Util::Resolution.exec("pmset -g |grep '#{subtype}' |awk '{print $2}' |sed 's/ //g'")
+  return fact
+end
+
+def handle_darwin_pwpolicy(modname,subtype)
+  managednode = Facter.value("#{modname}_darwin_system_managednode")
+  fact        = Facter::Util::Resolution.exec("pwpolicy -n #{managednode} -getglobalpolicy #{subtype} 2>&1 |cut -f2 -d= |sed 's/ //g'")
+  return fact
+end
+
+def handle_darwin(kernel,modname,type,subtype,file_info,fact)
+  case type
+  when "hostconfig"
+    fact = get_paramater_value(kernel,modname,type,file_info)
+  when "managednode"
+    fact = handle_darwin_managednode()
+  when "pmset"
+    fact = handle_darwin_pmset(subtype)
+  when "dscl"
+    fact = handle_darwin_dscl(subtype,file_info)
+  when "defaults"
+    fact = handle_darwin_defaults(subtype,file_info)
+  when "pwpolicy"
+    fact = handle_darwin_pwpolicy(modname,subtype)
   end
   return fact
 end
 
 # AIX specific facts
 
+def handle_aix_rctcp()
+  fact = %x[cat /etc/rc.tcpip |grep -v '^#' |awk '{print $2}']
+  fact = fact.gsub(/\n/,",")
+  return fact
+end
+
+def handle_aix_trustchk(file_info)
+  parameter = file_info[3..-1].join("_")
+  fact = Facter::Util::Resolution.exec("/usr/sbin/trustchk -p #{parameter} 2>&1 |cut -f2 -d=")
+  return fact
+end
+
+def handle_aix_lssec(file_info)
+  sec_file   = file_info[3]
+  sec_stanza = file_info[4]
+  parameter  = file_info[5]
+  fact = Facter::Util::Resolution.exec("lssec -f #{sec_file} -s #{sec_stanza} -a #{parameter} 2>&1 |awk '{print $2}' |cut -f2 -d=")
+  return fact
+end
+
 def handle_aix(type,file_info,fact)
-  if type == "trustchk"
-    parameter = file_info[3..-1].join("_")
-    fact = Facter::Util::Resolution.exec("/usr/sbin/trustchk -p #{parameter} 2>&1 |cut -f2 -d=")
-  end
-  if type == "lssec"
-    sec_file   = file_info[3]
-    sec_stanza = file_info[4]
-    parameter  = file_info[5]
-    fact = Facter::Util::Resolution.exec("lssec -f #{sec_file} -s #{sec_stanza} -a #{parameter} 2>&1 |awk '{print $2}' |cut -f2 -d=")
-  end
-  if type == "inetadm"
-    file_info = file_info[3..-1].join("_")
-    if file_info =~ /parameter/
-      (service_name,parameter) = file_info.split("_parameter_")
-      service_name = service_name.gsub(/_/,"/")
-      fact = Facter::Util::Resolution.exec("inetadm -l #{service_name} |grep #{parameter} |cut -f2 -d=")
-    end
+  case type
+  when "rctcp"
+    fact = handle_aix_rctcp()
+  when "trustchk"
+    handle_aix_trustchk(file_info)
+  when "lssec"
+    handle_aix_lssec(file_info)
   end
   return fact
 end
 
 # Handle syslog type
-def handle_syslog(type,file_info)
-  facility = file_info[3]
-  fact     = Facter::Util::Resolution.exec("cat /etc/#{type}.conf | grep -v '^#' |grep '#{facility}'")
+
+def handle_syslog(kernel,modname,type,file_info)
+  facility    = file_info[3]
+  config_file = get_config_file(kernel,modname,type)
+  fact     = Facter::Util::Resolution.exec("cat #{config_file} | grep -v '^#' |grep '#{facility}'")
   return fact
 end
 
@@ -454,20 +526,23 @@ end
 
 # Handle configfile type
 
-def handle_configfile(type,file_info)
-  if type =~ /apache/
-    prefix = "httpd"
-  else
-    if type =~ /cups/
-      prefix = "cupsd"
-    else
-      prefix = type.gsub(/configfile/,"")
+def handle_configfile(kernel,type,file_info)
+  if kernel =~ /Darwin|FreeBSD/
+    if type =~ /syslog/
+      prefix = "newsyslog"
     end
+  end
+  case type
+  when /apache/
+    prefix = "httpd"
+  when /cups/
+    prefix = "cupsd"
+  else
+    prefix = type.gsub(/configfile/,"")
   end
   case prefix
   when /^audit|^exec/
-    prefix      = prefix.gsub(/class/,"_class")
-    config_file = "/etc/security/"+prefix
+    config_file = "/etc/security/"+prefix.gsub(/class/,"_class")
   when /^cron|sys-suspend|paaswd/
     config_file = "/etc/default/#{prefix}"
   when /system/
@@ -475,15 +550,16 @@ def handle_configfile(type,file_info)
   when /policy/
     config_file = "/etc/security/policy.conf"
   else
-    search_file = prefix+".conf"
     config_file = ""
   end
+  search_file = prefix+".conf"
   if config_file !~ /[A-z]/
     config_file_list = []
-    dir_list = [ '/etc' '/etc/sfw', '/etc/apache', '/etc/apache2',
-                 '/etc/default', '/etc/sysconfig', '/usr/local/etc',
-                 '/usr/sfw/etc', '/opt/sfw/etc', '/etc/cups',
-                 '/etc/default', '/etc/security' ]
+    dir_list = [
+      '/etc' '/etc/sfw', '/etc/apache', '/etc/apache2', '/etc/default',
+      '/etc/sysconfig', '/usr/local/etc', '/usr/sfw/etc', '/opt/sfw/etc',
+      '/etc/cups', '/etc/default', '/etc/security', '/private/etc'
+    ]
     dir_list.each do |dir_name|
       config_file=dir_name+"/"+search_file
       if File.exists?(config_file)
@@ -895,18 +971,23 @@ end
 # Handle readable files types
 
 def handle_readablefiles_types(type)
-  file_name = type.gsub(/files/,"")
-  file_name = "."+file_name
-  home_dirs = %x[cat /etc/passwd |cut -f6 -d":" |grep -v "^/$"]
+  fact = []
+  if type != "readabledotfiles"
+    file_name = type.gsub(/files/,"")
+    file_name = "."+file_name
+  end
+  home_dirs = %x[cat /etc/passwd |cut -f6 -d":" |grep -v "^/$" |grep -v '^#' |sort |uniq]
   home_dirs = home_dirs.split(/\n/)
   home_dirs.each do |home_dir|
     if File.directory?(home_dir)
       if type == "readabledotfiles"
         files_list = %x[sudo find #{home_dir} -name .\[A-z,0-9\]* -maxdepth 1 -type f -perm +066]
-        files_list = files_list.split(/\n/)
-        files_list.each do |check_file|
-          if File.exists?(check_file)
-            fact.push(check_file)
+        if files_list =~ /[a-z]/
+          files_list = files_list.split(/\n/)
+          files_list.each do |check_file|
+            if File.exists?(check_file)
+              fact.push(check_file)
+            end
           end
         end
       else
@@ -926,17 +1007,6 @@ end
 # Handle sudo type
 
 def handle_sudo(kernel,modname,type,file_info)
-  config_file = get_config_file(kernel,modname,type)
-  parameter   = file_info[3]
-  if File.exists?(config_file)
-    fact = Facter::Util::Resolution.exec("cat #{config_file} |grep #{parameter}")
-  end
-  return fact
-end
-
-# Handle ssh type
-
-def handle_ssh(kernel,modname,type,file_info)
   config_file = get_config_file(kernel,modname,type)
   parameter   = file_info[3]
   if File.exists?(config_file)
@@ -991,128 +1061,92 @@ if file_name !~ /template|operatingsystemupdate/
       setcode do
         fact   = ""
         os_version = Facter.value("operatingsystemrelease")
-        if type =~ /rhostfiles|netrcfiles|readabledotfiles/
-          fact = handle_readablefiles_types(type)
-        end
-        if type == "symlink"
-          fact = handle_symlink(file_info)
-        end
-        if type =~ /cron/
-          fact = handle_cron(kernel,type)
-        end
-        if type =~ /^nis/
-          fact = handle_nis(type)
-        end
-        if type =~ /xml|plist|launchctl/
-          fact = handle_xml_types(type,file_info)
-        end
-        if type =~ /syslog/
-          fact = handle_syslog(type,file_info)
-        end
-        if type =~ /byothers|byeveryone/
-          fact = handle_readwrite(type,file_info)
-        end
-        if type =~ /directorylisting/
-          fact = handle_directorylisting(type,file_info)
-        end
         if $fs_search == "yes"
-          if type == "suidfiles"
+          case type
+          when "suidfiles"
             fact = handle_suidfiles(kernel)
-          end
-          if type == "stickybitfiles"
+          when "stickybitfiles"
             fact = handle_stickybitfiles(kernel)
-          end
-          if type == "unownedfiles"
+          when "unownedfiles"
             fact = handle_unownedfile(kernel,type,fact_info)
-          end
-          if type == "worldwritablefiles"
+          when "worldwritablefiles"
             fact = handle_worldwritable(kernel)
           end
         end
-        if type == "inactivewheelusers"
+        case type
+        when /rhostfiles|netrcfiles|readabledotfiles/
+          fact = handle_readablefiles_types(type)
+        when "symlink"
+          fact = handle_symlink(file_info)
+        when /cron/
+          fact = handle_cron(kernel,type)
+        when /^nis/
+          fact = handle_nis(type)
+        when /xml|plist|launchctl/
+          fact = handle_xml_types(type,file_info)
+        when /syslog/
+          fact = handle_syslog(kernel,modname,type,file_info)
+        when /byothers|byeveryone/
+          fact = handle_readwrite(type,file_info)
+        when /directorylisting/
+          fact = handle_directorylisting(type,file_info)
+        when "inactivewheelusers"
           fact = handle_inactivewheelusers()
-        end
-        if type == "sudo"
+        when "sudo"
           fact = handle_sudo(kernel,modname,type,file_info)
-        end
-        if type == "ssh"
-          fact = handle_ssh(kernel,modname,type,file_info)
-        end
-        if type == "groupexists"
+        when /ssh|krb5|hosts.allow|hosts.deny/
+          fact = get_paramater_value(kernel,modname,type,file_info)
+        when "groupexists"
           fact = handle_groupexists(file_info)
-        end
-        if type == "sulogin"
+        when "sulogin"
           fact = handle_sulogin(kernel)
-        end
-        if type =~ /invalid/
+        when /invalid/
           fact = handle_invalidsystem_types(kernel,type)
-        end
-        if type == "exec"
+        when "exec"
           fact = handle_exec(file_info)
-        end
-        if type == "mtime"
+        when "mtime"
           fact = handle_mtime(file_info)
-        end
-        if type == "perms"
+        when "perms"
           fact = handle_perms(file_info)
-        end
-        if type == "dotfiles"
+        when "dotfiles"
           fact = handle_dotfiles()
-        end
-        if type == "installedpackages"
+        when "installedpackages"
           fact = handle_installedpackages(kernel,os_distro)
-        end
-        if type == "exists"
+        when "exists"
           fact = handle_exists(file_info)
-        end
-        if type == "inetd"
+        when "inetd"
           fact = handle_inetd()
-        end
-        if type == "inittab"
+        when "inittab"
           fact = handle_inittab(kernel,type,file_info)
-        end
-        if type =~ /services/
+        when /services/
           fact = handle_services(kernel,type)
-        end
-        if type =~ /duplicate/
+        when /duplicate/
           fact = handle_duplicate(type,file_info)
-        end
-        if type =~ /configfile/
-          fact = handle_configfile(type,file_info)
-        end
-        if type =~ /apache$/
+        when /configfile/
+          fact = handle_configfile(kernel,type,file_info)
+        when /apache$/
           fact = handle_apache(kernel,modname,type,file_info)
-        end
-        if type =~ /cups$/
+        when /cups$/
           fact = handle_cups(kernel,modname,type,file_info)
-        end
-        if type == "pam"
+        when "pam"
           fact = handle_pam(kernel,type,file_info)
-        end
-        if type == "ntp"
+        when "ntp"
           fact = handle_ftp(type,file_info)
-        end
-        if type == "file"
+        when "file"
           fact = handle_file(kernel,modname,type,subtype,file_info)
+        when "Linux"
+          fact = handle_linux(kernel,modname,type,file_info,os_distro,fact)
         end
-        if kernel == "Linux"
-          fact = handle_linux(kernel,modname,type,file_info,fact)
-        end
-        if kernel =~ /Linux|FreeBSD/
-          if type == "sysctl"
-            fact = handle_sysctl(type,file_info,fact)
-          end
-        end
-        if kernel == "AIX"
+        case kernel
+        when "Linux"
+          fact = handle_freebsd(kernel,modname,type,file_info,fact)
+        when "AIX"
           fact = handle_aix(type,file_info,fact)
-        end
-        if kernel == "SunOS"
-          fact = handle_sunos(type,file_info,fact)
-        end
-        if kernel == "Darwin"
-          fact = handle_darwin(modname,type,subtype,file_info,fact)
-        end
-        if kernel == "FreeBSD"
+        when "SunOS"
+          fact = handle_sunos(kernel,modname,type,file_info,fact,os_version)
+        when "Darwin"
+          fact = handle_darwin(kernel,modname,type,subtype,file_info,fact)
+        when "FreeBSD"
           fact = handle_freebsd(kernel,modname,type,file_info,fact)
         end
         if fact !~ /[0-9]|[A-z]/

@@ -73,3 +73,7 @@
 # Added stickybitfiles type
 # 0.3.7: Fri  9 May 2014 20:27:21 EST
 # Added ssh type
+# 0.3.8: Sat 10 May 2014 09:32:22 EST
+# Added krb5 type
+# 0.3.9: Sun 11 May 2014 12:15:57 EST
+# Cleaned up code and added hosts.allow and hosts.deny types
