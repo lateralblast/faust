@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.4.9
+# Version:      0.5.0
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -59,14 +59,24 @@ end
 def get_parameter_value(kernel,modname,type,file_info)
   config_file = get_config_file(kernel,modname,type)
   if File.exists?(config_file)
-    if type =~ /hostsallow|hostsdeny|snmp|sendmailcf/
+    if type =~ /hostsallow|hostsdeny|snmp|sendmailcf|ntp/
       parameter = file_info[3..-1].join(" ")
-      fact      = %x[cat #{config_file} |grep -v '#' |grep '#{parameter}']
-      fact      = fact.gsub(/\n/,",")
+      if type =~ /hostsallow|hostsdeny/
+        fact      = %x[cat #{config_file} |grep -v '#' |grep '#{parameter}']
+        fact      = fact.gsub(/\n/,",")
+      else
+        parameter = file_info[3..-1].join(" ")
+        fact = Facter::Util::Resolution.exec("cat #{config_file} |grep -v '^#' |grep '#{parameter}'")
+      end
     else
       parameter = file_info[3..-1].join("_")
-      if type =~ /ssh|apache/
+      case type
+      when "pam"
+        fact = Facter::Util::Resolution.exec("cat #{config_file} |grep -v '^#' |grep '#{parameter}'")
+      when /ssh|apache/
         fact = Facter::Util::Resolution.exec("cat #{config_file} |grep -v '^#' |grep '#{parameter}' |awk '{print $2}'")
+      when "aliases"
+        fact = Facter::Util::Resolution.exec("cat #{config_file} |grep -v '^#' |grep '#{parameter}' |cut -f2 -d: |sed 's/ //g'")
       else
         fact = Facter::Util::Resolution.exec("cat #{config_file} |grep -v '^#' |grep '#{parameter}' |cut -f2 -d= |sed 's/ //g'")
       end
@@ -208,9 +218,7 @@ end
 
 def handle_linux(kernel,modname,type,file_info,os_distro,fact)
   case type
-  when "sysctl"
-    fact = handle_sysctl(type,file_info,fact)
-  when /avahi|yum/
+  when /avahi|yum|sysctl/
     fact = get_parameter_value(kernel,modname,type,file_info)
   when "prelinkstatus"
     fact = handle_prelink_status(kernel,modname,type)
@@ -459,22 +467,6 @@ def handle_file(kernel,modname,type,subtype,file_info)
   return fact
 end
 
-# Handle sysctl type
-
-def handle_sysctl(type,file_info)
-  parameter = file_info[3..-1].join("_")
-  fact      = Facter::Util::Resolution.exec("cat /etc/sysctl.conf |grep '#{parameter}' |awk -F= '{print $2}'")
-  return fact
-end
-
-# Handle pam type
-
-def handle_ntp(type,file_info)
-  parameter = file_info[3..-1].join(" ")
-  fact = %x[cat /etc/ntp.conf |grep '#{parameter}']
-  return fact
-end
-
 # Handle unownedfiles
 
 def handle_unownedfiles(kernel,type,file_info)
@@ -560,7 +552,11 @@ def handle_configfile(kernel,type,file_info)
     config_file = ""
   end
   if config_file !~ /[A-z]/
-    search_file = prefix+".conf"
+    if prefix =~ /aliases/
+      search_file = prefix
+    else
+      search_file = prefix+".conf"
+    end
     config_file_list = []
     dir_list = [
       '/etc' '/etc/sfw', '/etc/apache', '/etc/apache2', '/etc/default',
@@ -1166,7 +1162,7 @@ if file_name !~ /template|operatingsystemupdate/
           fact = handle_inactivewheelusers()
         when "sudo"
           fact = handle_sudo(kernel,modname,type,file_info)
-        when /ssh|krb5|hostsallow|hostsdeny|snmp|sendmail/
+        when /ssh|krb5|hostsallow|hostsdeny|snmp|sendmail|ntp/
           fact = get_parameter_value(kernel,modname,type,file_info)
         when "groupexists"
           fact = handle_groupexists(file_info)
@@ -1200,8 +1196,6 @@ if file_name !~ /template|operatingsystemupdate/
           fact = handle_cups(kernel,modname,type,file_info)
         when "pam"
           fact = handle_pam(kernel,type,file_info)
-        when "ntp"
-          fact = handle_ntp(type,file_info)
         when "file"
           fact = handle_file(kernel,modname,type,subtype,file_info)
         when "Linux"
@@ -1209,7 +1203,7 @@ if file_name !~ /template|operatingsystemupdate/
         end
         case kernel
         when "Linux"
-          fact = handle_freebsd(kernel,modname,type,file_info,fact)
+          fact = handle_linux(kernel,modname,type,file_info,fact)
         when "AIX"
           fact = handle_aix(type,file_info,fact)
         when "SunOS"
