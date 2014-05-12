@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.5.0
+# Version:      0.5.1
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -74,11 +74,11 @@ def get_parameter_value(kernel,modname,type,file_info)
       when "pam"
         fact = Facter::Util::Resolution.exec("cat #{config_file} |grep -v '^#' |grep '#{parameter}'")
       when /ssh|apache/
-        fact = Facter::Util::Resolution.exec("cat #{config_file} |grep -v '^#' |grep '#{parameter}' |awk '{print $2}'")
+        fact = Facter::Util::Resolution.exec("cat #{config_file} |grep -v '^#' |grep '#{parameter}' |grep -v '#{parameter}[A-z,0-9]' |awk '{print $2}'")
       when "aliases"
-        fact = Facter::Util::Resolution.exec("cat #{config_file} |grep -v '^#' |grep '#{parameter}' |cut -f2 -d: |sed 's/ //g'")
+        fact = Facter::Util::Resolution.exec("cat #{config_file} |grep -v '^#' |grep '#{parameter}' |grep -v '#{parameter}[A-z,0-9]' |cut -f2 -d: |sed 's/ //g'")
       else
-        fact = Facter::Util::Resolution.exec("cat #{config_file} |grep -v '^#' |grep '#{parameter}' |cut -f2 -d= |sed 's/ //g'")
+        fact = Facter::Util::Resolution.exec("cat #{config_file} |grep -v '^#' |grep '#{parameter}' |grep -v '#{parameter}[A-z,0-9]' |cut -f2 -d= |sed 's/ //g'")
       end
     end
   end
@@ -332,7 +332,7 @@ def handle_pam(kernel,type,file_info)
   if kernel == "SunOS"
     fact = Facter::Util::Resolution.exec("cat /etc/pam.conf |grep '^#{mod_name}' |grep '#{parameter}'")
   else
-    fact = Facter::Util::Resolution.exec("cat /etc/pam..d/#{mod_name}' |grep '#{parameter}'")
+    fact = Facter::Util::Resolution.exec("cat /etc/pam.d/#{mod_name}' |grep '#{parameter}'")
   end
 end
 # Handle duplicate type
@@ -400,15 +400,15 @@ def handle_file(kernel,modname,type,subtype,file_info)
     if File.exists?(config_file)
       if separator == " "
         if parameter !~ /^#/
-          fact = Facter::Util::Resolution.exec("cat #{config_file} |grep -v '^#{comment}' |grep '^#{parameter}' |awk '{print $2}' |sed 's/ $//g'")
+          fact = Facter::Util::Resolution.exec("cat #{config_file} |grep -v '^#{comment}' |grep '^#{parameter}' |grep -v '#{parameter}[A-z,0-9]' |awk '{print $2}' |sed 's/ $//g'")
         else
-          fact = Facter::Util::Resolution.exec("cat #{config_file} |grep '^#{parameter}' |awk '{print $2}' |sed 's/ $//g'")
+          fact = Facter::Util::Resolution.exec("cat #{config_file} |grep '^#{parameter}' |grep -v '#{parameter}[A-z,0-9]' |awk '{print $2}' |sed 's/ $//g'")
         end
       else
         if parameter !~ /^#/
-          fact = Facter::Util::Resolution.exec("cat #{config_file} |grep -v '^#{comment}' |grep '^#{parameter}' |awk -F#{separator} '{print $2}' |sed 's/ $//g'")
+          fact = Facter::Util::Resolution.exec("cat #{config_file} |grep -v '^#{comment}' |grep '^#{parameter}' |grep -v '#{parameter}[A-z,0-9]' |awk -F#{separator} '{print $2}' |sed 's/ $//g'")
         else
-          fact = Facter::Util::Resolution.exec("cat #{config_file} |grep '^#{parameter}' |awk -F#{separator} '{print $2}' |sed 's/ $//g'")
+          fact = Facter::Util::Resolution.exec("cat #{config_file} |grep '^#{parameter}' |grep -v '#{parameter}[A-z,0-9]' |awk -F#{separator} '{print $2}' |sed 's/ $//g'")
         end
       end
     end
@@ -492,28 +492,6 @@ def handle_unownedfiles(kernel,type,file_info)
   return fact
 end
 
-# Handle apache type
-
-def handle_apache(kernel,modname,type,file_info)
-  parameter   = file_info[3]
-  config_file = get_config_file(kernel,modname,type)
-  if File.exists?(config_file)
-    fact = Facter::Util::Resolution.exec("cat #{config_file} |grep '^#{parameter}' |awk '{print $2}' |sed 's/ $//g'")
-  end
-  return fact
-end
-
-# Handle cups type
-
-def handle_cups(kernel,modname,type,file_info)
-  parameter   = file_info[3]
-  config_file = get_config_file(kernel,modname,type)
-  if File.exists?(config_file)
-    fact        = Facter::Util::Resolution.exec("cat #{config_file} |grep '^#{parameter}' |awk '{print $2}' |sed 's/ $//g'")
-  end
-  return fact
-end
-
 # Handle configfile type
 
 def handle_configfile(kernel,type,file_info)
@@ -526,6 +504,8 @@ def handle_configfile(kernel,type,file_info)
     end
   end
   case type
+  when /selinux/
+    prefix = "config"
   when /apache/
     prefix = "httpd"
   when /cups/
@@ -562,7 +542,7 @@ def handle_configfile(kernel,type,file_info)
       '/etc' '/etc/sfw', '/etc/apache', '/etc/apache2', '/etc/default',
       '/etc/sysconfig', '/usr/local/etc', '/usr/sfw/etc', '/opt/sfw/etc',
       '/etc/cups', '/etc/default', '/etc/security', '/private/etc',
-      '/etc/mail','/etc/krb5','etc/snmp'
+      '/etc/mail','/etc/krb5','etc/snmp','/etc/selinux','/etc/grub'
     ]
     dir_list.each do |dir_name|
       config_file=dir_name+"/"+search_file
@@ -1162,7 +1142,7 @@ if file_name !~ /template|operatingsystemupdate/
           fact = handle_inactivewheelusers()
         when "sudo"
           fact = handle_sudo(kernel,modname,type,file_info)
-        when /ssh|krb5|hostsallow|hostsdeny|snmp|sendmail|ntp/
+        when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|selinux$|cups$|apache$/
           fact = get_parameter_value(kernel,modname,type,file_info)
         when "groupexists"
           fact = handle_groupexists(file_info)
@@ -1190,10 +1170,6 @@ if file_name !~ /template|operatingsystemupdate/
           fact = handle_configfile(kernel,type,file_info)
         when /crontabfile/
           fact = handle_crontabfile(kernel,type,file_info)
-        when /apache$/
-          fact = handle_apache(kernel,modname,type,file_info)
-        when /cups$/
-          fact = handle_cups(kernel,modname,type,file_info)
         when "pam"
           fact = handle_pam(kernel,type,file_info)
         when "file"
