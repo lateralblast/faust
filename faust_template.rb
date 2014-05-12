@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.4.6
+# Version:      0.4.7
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -59,10 +59,10 @@ end
 def get_parameter_value(kernel,modname,type,file_info)
   config_file = get_config_file(kernel,modname,type)
   if File.exists?(config_file)
-    if type =~ /hostsallow|hostsdeny|snmp/
+    if type =~ /hostsallow|hostsdeny|snmp|sendmail/
       parameter = file_info[3..-1].join(" ")
-      fact = %x[cat #{config_file} |grep -v '#' |grep '#{parameter}']
-      fact = fact.gsub(/\n/,",")
+      fact      = %x[cat #{config_file} |grep -v '#' |grep '#{parameter}']
+      fact      = fact.gsub(/\n/,",")
     else
       parameter = file_info[3..-1].join("_")
       if type =~ /ssh/
@@ -140,7 +140,7 @@ end
 def handle_sunos(kernel,modname,type,file_info,fact,os_version)
   case type
   when /cron|login|sys-suspend|passwd|system|^audit/
-    fact = get_paramater_value(kernel,modname,type,file_info)
+    fact = get_parameter_value(kernel,modname,type,file_info)
   when /xresourcesfiles|xsysresourcesfiles/
     fact = handle_sunos_resourcefiles(type,file_info)
   when "coreadm"
@@ -162,7 +162,7 @@ end
 def handle_freebsd(kernel,modname,type,file_info,fact)
   case type
   when /login|rc|sysctl/
-    fact = get_paramater_value(kernel,modname,type,file_info)
+    fact = get_parameter_value(kernel,modname,type,file_info)
   end
   return fact
 end
@@ -223,7 +223,7 @@ def handle_linux(kernel,modname,type,file_info,os_distro,fact)
   when "sysctl"
     fact = handle_sysctl(type,file_info,fact)
   when /avahi|yum/
-    fact = get_paramater_value(kernel,modname,type,file_info)
+    fact = get_parameter_value(kernel,modname,type,file_info)
   when "prelinkstatus"
     fact = handle_prelink_status(kernel,modname,type)
   when "audit"
@@ -276,7 +276,7 @@ end
 def handle_darwin(kernel,modname,type,subtype,file_info,fact)
   case type
   when "hostconfig"
-    fact = get_paramater_value(kernel,modname,type,file_info)
+    fact = get_parameter_value(kernel,modname,type,file_info)
   when "managednode"
     fact = handle_darwin_managednode()
   when "pmset"
@@ -563,6 +563,8 @@ def handle_configfile(kernel,type,file_info)
     config_file = "/etc/hosts.allow"
   when /hostsdeny/
     config_file = "/etc/hosts.deny"
+  when /sendmail/
+    config_file = "/etc/mail/sendmail.cf"
   else
     config_file = ""
   end
@@ -572,7 +574,8 @@ def handle_configfile(kernel,type,file_info)
     dir_list = [
       '/etc' '/etc/sfw', '/etc/apache', '/etc/apache2', '/etc/default',
       '/etc/sysconfig', '/usr/local/etc', '/usr/sfw/etc', '/opt/sfw/etc',
-      '/etc/cups', '/etc/default', '/etc/security', '/private/etc'
+      '/etc/cups', '/etc/default', '/etc/security', '/private/etc',
+      '/etc/mail'
     ]
     dir_list.each do |dir_name|
       config_file=dir_name+"/"+search_file
@@ -1130,8 +1133,8 @@ if file_name !~ /template|operatingsystemupdate/
           fact = handle_inactivewheelusers()
         when "sudo"
           fact = handle_sudo(kernel,modname,type,file_info)
-        when /ssh|krb5|hostsallow|hostsdeny|snmp/
-          fact = get_paramater_value(kernel,modname,type,file_info)
+        when /ssh|krb5|hostsallow|hostsdeny|snmp|sendmail/
+          fact = get_parameter_value(kernel,modname,type,file_info)
         when "groupexists"
           fact = handle_groupexists(file_info)
         when "sulogin"

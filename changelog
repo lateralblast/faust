@@ -91,3 +91,5 @@
 # Added serialservices type
 # 0.4.6: Mon 12 May 2014 10:02:40 EST
 # Fixed NTP type and other bugs
+# 0.4.7: Mon 12 May 2014 13:28:56 EST
+# Added sendmail type
