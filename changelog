@@ -95,3 +95,5 @@
 # Added sendmail type
 # 0.4.8: Mon 12 May 2014 13:44:32 EST
 # Modified sendmail type to be sendmailcf and add sendmail type for defaults
+# 0.4.9: Mon 12 May 2014 15:48:13 EST
+# Added crontab and *crontabfile types and cleaned up config file determination

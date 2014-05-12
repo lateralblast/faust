@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.4.7
+# Version:      0.4.9
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -139,7 +139,7 @@ end
 
 def handle_sunos(kernel,modname,type,file_info,fact,os_version)
   case type
-  when /cron|login|sys-suspend|passwd|system|^audit/
+  when /cron$|login|sys-suspend|passwd|system|^audit/
     fact = get_parameter_value(kernel,modname,type,file_info)
   when /xresourcesfiles|xsysresourcesfiles/
     fact = handle_sunos_resourcefiles(type,file_info)
@@ -170,23 +170,11 @@ end
 # Get conig file
 
 def get_config_file(kernel,modname,type)
-  config_file = modname+"_"+kernel.downcase+"_"+type+"configfile"
+  file_name   = type+"configfile"
+  config_file = modname+"_"+kernel.downcase+"_"+file_name
   config_file = Facter.value(config_file)
   if config_file !~ /[A-z]/
-    config_file_list = []
-    dir_list = [
-      '/etc' '/etc/sfw', '/etc/apache2', '/etc/apache', '/etc/default',
-      '/etc/sysconfig', '/usr/local/etc', '/usr/sfw/etc', '/opt/sfw/etc',
-      '/etc/cups', '/etc/ssh', '/etc/default', '/etc/security', '/etc/krb5',
-      '/etc/snmp'
-    ]
-    dir_list.each do |dir_name|
-      config_file=dir_name+"/"+search_file
-      if File.exists?(config_file)
-        config_file_list.push(config_file)
-      end
-    end
-    config_file = config_file_list[0]
+    config_file = handle_configfile(kernel,type,file_type)
   end
   return config_file
 end
@@ -537,6 +525,9 @@ end
 # Handle configfile type
 
 def handle_configfile(kernel,type,file_info)
+  if type !~ /configfile/
+    type = file_info
+  end
   if kernel =~ /Darwin|FreeBSD/
     if type =~ /syslog/
       prefix = "newsyslog"
@@ -553,7 +544,7 @@ def handle_configfile(kernel,type,file_info)
   case prefix
   when /^audit|^exec/
     config_file = "/etc/security/"+prefix.gsub(/class/,"_class")
-  when /^cron|sys-suspend|paaswd/
+  when /cron|sys-suspend|passwd/
     config_file = "/etc/default/#{prefix}"
   when /system/
     config_file = "/etc/system"
@@ -575,7 +566,7 @@ def handle_configfile(kernel,type,file_info)
       '/etc' '/etc/sfw', '/etc/apache', '/etc/apache2', '/etc/default',
       '/etc/sysconfig', '/usr/local/etc', '/usr/sfw/etc', '/opt/sfw/etc',
       '/etc/cups', '/etc/default', '/etc/security', '/private/etc',
-      '/etc/mail'
+      '/etc/mail','/etc/krb5','etc/snmp'
     ]
     dir_list.each do |dir_name|
       config_file=dir_name+"/"+search_file
@@ -1052,6 +1043,46 @@ def handle_sudo(kernel,modname,type,file_info)
   return fact
 end
 
+
+
+# Get user/application cron file
+
+def get_user_crontab_file(kernel,modname,type,user_name)
+  file_name = user_name+"crontabfile"
+  fact_name = modname+"_"+kernel.downcase+"_"+file_name
+  cron_file = Facter.value(fact_name)
+  if cron_file !~ /[a-z]/
+    cron_file = handle_crontabfile(kernel,type,file_name)
+  end
+  return cron_file
+end
+
+
+def handle_crontabfile(kernel,type,file_info)
+  if type =~ /crontabfile/
+    search_file = file_info[3].gsub(/crontabfile/,"")
+  else
+    search_file = file_info.gsub(/crontabfile/,"")
+  end
+  if kernel == "Linux"
+    cron_dir = "/etc/cron.*/"
+  end
+  if kernel == "SunOS"
+    cron_dir = "/var/spool/cron/crontabs/"
+  end
+  fact = Facter::Util::Resolution.exec("find #{cron_dir} -name #{search_file}")
+  return fact
+end
+
+# Handle crontab
+
+def get_user_crontab(kernel,modname,type,file_info)
+  user_name = file_info[3]
+  cron_file = get_user_cron_file(kernel,modname,type,user_name)
+  fact      = %x[sudo cat #{cron_file}]
+  return fact
+end
+
 # Main code
 
 if file_name !~ /template|operatingsystemupdate/
@@ -1115,8 +1146,10 @@ if file_name !~ /template|operatingsystemupdate/
           fact = handle_readablefiles_types(type)
         when "symlink"
           fact = handle_symlink(file_info)
-        when /cron/
+        when /cron$/
           fact = handle_cron(kernel,type)
+        when "crontab"
+          fact = get_user_crontab(kernel,modname,type,user_name)
         when /^nis/
           fact = handle_nis(type)
         when /groupmembers/
@@ -1159,6 +1192,8 @@ if file_name !~ /template|operatingsystemupdate/
           fact = handle_duplicate(type,file_info)
         when /configfile/
           fact = handle_configfile(kernel,type,file_info)
+        when /crontabfile/
+          fact = handle_crontabfile(kernel,type,file_info)
         when /apache$/
           fact = handle_apache(kernel,modname,type,file_info)
         when /cups$/
