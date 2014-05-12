@@ -59,13 +59,13 @@ end
 def get_parameter_value(kernel,modname,type,file_info)
   config_file = get_config_file(kernel,modname,type)
   if File.exists?(config_file)
-    if type =~ /hostsallow|hostsdeny|snmp|sendmail/
+    if type =~ /hostsallow|hostsdeny|snmp|sendmailcf/
       parameter = file_info[3..-1].join(" ")
       fact      = %x[cat #{config_file} |grep -v '#' |grep '#{parameter}']
       fact      = fact.gsub(/\n/,",")
     else
       parameter = file_info[3..-1].join("_")
-      if type =~ /ssh/
+      if type =~ /ssh|apache/
         fact = Facter::Util::Resolution.exec("cat #{config_file} |grep -v '^#' |grep '#{parameter}' |awk '{print $2}'")
       else
         fact = Facter::Util::Resolution.exec("cat #{config_file} |grep -v '^#' |grep '#{parameter}' |cut -f2 -d= |sed 's/ //g'")
@@ -563,7 +563,7 @@ def handle_configfile(kernel,type,file_info)
     config_file = "/etc/hosts.allow"
   when /hostsdeny/
     config_file = "/etc/hosts.deny"
-  when /sendmail/
+  when /sendmailcf/
     config_file = "/etc/mail/sendmail.cf"
   else
     config_file = ""

@@ -93,3 +93,5 @@
 # Fixed NTP type and other bugs
 # 0.4.7: Mon 12 May 2014 13:28:56 EST
 # Added sendmail type
+# 0.4.8: Mon 12 May 2014 13:44:32 EST
+# Modified sendmail type to be sendmailcf and add sendmail type for defaults
