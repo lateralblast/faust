@@ -87,3 +87,7 @@
 # Added *groupmembers type
 # 0.4.4: Mon 12 May 2014 08:25:35 EST
 # Cleaned up services code
+# 0.4.5: Mon 12 May 2014 09:43:34 EST
+# Added serialservices type
+# 0.4.6: Mon 12 May 2014 10:02:40 EST
+# Fixed NTP type and other bugs

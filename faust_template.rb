@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.4.4
+# Version:      0.4.6
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -481,7 +481,7 @@ end
 
 # Handle pam type
 
-def handle_pam(type,file_info)
+def handle_ntp(type,file_info)
   parameter = file_info[3..-1].join(" ")
   fact = %x[cat /etc/ntp.conf |grep '#{parameter}']
   return fact
@@ -589,8 +589,8 @@ end
 
 def handle_services(kernel,type)
   fact = ""
-  if type = "rctcpservices"
-    if kernel = "AIX"
+  if type == "rctcpservices"
+    if kernel == "AIX"
       fact = %x[cat /etc/rc.tcpip |grep -v '^#' |awk '{print $2}']
     end
   end
@@ -618,11 +618,29 @@ def handle_services(kernel,type)
       fact = %x[cat /etc/inetd.conf |grep -v '^#' |awk '{print $1}']
     end
   end
-  if type = "inittabservices"
+  if type == "inittabservices"
     if kernel == "AIX"
       fact = %x[cat /etc/inittab |grep -v '^#' |cut -f1 -d:]
     else
       fact = %x[lsitab -a |grep -v '^#' |cut -f1 -d:]
+    end
+  end
+  if type == "serialservices"
+    if  kernel == "AIX"
+      fact = %x[lsitab –a |grep 'on:/usr/sbin/getty']
+    end
+    if kernel == "SunOS"
+      if os_version =~ /11/
+        fact = %x[svcs -a |grep online| grep console |grep 'term']
+      else
+        fact = %x[pmadm -L |egrep 'ttya|ttyb']
+      end
+    end
+    if kernel == "FreeBSD"
+      fact = %x[cat /etc/ttys |grep dialup |grep -v off |egrep 'ttya|ttyb']
+    end
+    if kernel == "Linux"
+      fact = %x[cat /etc/inittab |grep -v '^#' |grep getty |egrep 'ttya|ttyb']
     end
   end
   fact = fact.gsub(/\n/,",")
@@ -716,13 +734,13 @@ def handle_readwrite(type,file_info)
   dir_name = file_info[3..-1]
   dir_name = "/"+dir_name.join("/")
   if type =~ /byothers/
-    if type -~ /readableorwritable/
+    if type =~ /readableorwritable/
       fact     = %x[fine #{dir_name} -type f -perm +066]
     else
       fact     = %x[fine #{dir_name} -type f -perm +022]
     end
   else
-    if type -~ /readableorwritable/
+    if type =~ /readableorwritable/
       fact     = %x[fine #{dir_name} -type f -perm +006]
     else
       fact     = %x[fine #{dir_name} -type f -perm +002]
@@ -856,11 +874,12 @@ def handle_invalidsystem_types(kernel,type)
   end
   if type == "invalidshells"
     if File.exists?("/etc/shells")
-    shell_list = %x[cat /etc/shells]
-    shell_list = shell_list.split("\n")
-    shell_list.each do |shell|
-      if !File.exists?(shell)
-        invalid_list.push(shell)
+      shell_list = %x[cat /etc/shells]
+      shell_list = shell_list.split("\n")
+      shell_list.each do |shell|
+        if !File.exists?(shell)
+          invalid_list.push(shell)
+        end
       end
     end
   end
@@ -1144,7 +1163,7 @@ if file_name !~ /template|operatingsystemupdate/
         when "pam"
           fact = handle_pam(kernel,type,file_info)
         when "ntp"
-          fact = handle_ftp(type,file_info)
+          fact = handle_ntp(type,file_info)
         when "file"
           fact = handle_file(kernel,modname,type,subtype,file_info)
         when "Linux"
