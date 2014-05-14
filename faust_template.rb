@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.5.1
+# Version:      0.5.2
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -130,7 +130,7 @@ def handle_sunos_ipadm(type,file_info,os_version)
   if os_version =~ /11/
     driver    = file_info[3]
     parameter = "_"+file_info[4..-2].join("_")
-    fact = Facter::Util::Resolution.exec("ipadm show-prop #{driver} -co current #{parameter}")
+    fact      = Facter::Util::Resolution.exec("ipadm show-prop #{driver} -co current #{parameter}")
   end
   return fact
 end
@@ -138,13 +138,34 @@ end
 def handle_sunos_inetadm(file_info)
   if os_version =~ /10|11/
     file_info = file_info[3..-1].join("_")
-    if file_info =~ /parameter/
-      (service_name,parameter) = file_info.split("_parameter_")
-      service_name = service_name.gsub(/_/,"/")
-      fact = Facter::Util::Resolution.exec("inetadm -l #{service_name} |grep #{parameter} |cut -f2 -d=")
+    if file_info =~ /param/
+      (service,parameter) = file_info.split("_param_")
+      if service !~ /^svc/
+        service = "svc:/"+service
+      else
+        service = service.gsub(/_/,"/")
+      end
+      fact    = Facter::Util::Resolution.exec("inetadm -l #{service} |grep #{parameter} |cut -f2 -d=")
     end
   end
   return fact
+end
+
+def handle_sunos_svc(file_info,os_version)
+  if os_version =~ /10|11/
+    file_info = file_info[3..-1].join("_")
+    if file_info =~ /prop/
+      (service,parameter) = file_info.split(/_prop_/)
+      if service !~ /^svc/
+        service   = "svc:/"+service.gsub(/_/,"/")
+      else
+        service = service.gsub(/_/,"/")
+      end
+      parameter = parameter.split("_")
+      prameter  = parameter[0]+"/"+parameter[1..-1].join("_")
+      fact      = Facter::Util::Resolution.exec("svcprop -p #{parameter} #{service}")
+    end
+  end
 end
 
 def handle_sunos(kernel,modname,type,file_info,fact,os_version)
@@ -163,6 +184,8 @@ def handle_sunos(kernel,modname,type,file_info,fact,os_version)
     fact = handle_sunos_ipadm(type,file_info,os_version)
   when "inetadm"
     fact = handle_sunos_inetadm(file_info,os_version)
+  when "svc"
+    fact = handle_sunos_svc(file_info,os_version)
   end
   return fact
 end
