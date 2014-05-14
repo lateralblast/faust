@@ -56,29 +56,29 @@ end
 
 # Get the value of a parameter from a file
 
-def get_parameter_value(kernel,modname,type,file_info)
-  config_file = get_config_file(kernel,modname,type)
-  if File.exists?(config_file)
+def get_param_value(kernel,modname,type,file_info)
+  file = get_config_file(kernel,modname,type)
+  if File.exists?(file)
     if type =~ /hostsallow|hostsdeny|snmp|sendmailcf|ntp/
-      parameter = file_info[3..-1].join(" ")
+      param = file_info[3..-1].join(" ")
       if type =~ /hostsallow|hostsdeny/
-        fact      = %x[cat #{config_file} |grep -v '#' |grep '#{parameter}']
-        fact      = fact.gsub(/\n/,",")
+        fact = %x[cat #{file} |grep -v '#' |grep '#{param}']
+        fact = fact.gsub(/\n/,",")
       else
-        parameter = file_info[3..-1].join(" ")
-        fact = Facter::Util::Resolution.exec("cat #{config_file} |grep -v '^#' |grep '#{parameter}'")
+        param = file_info[3..-1].join(" ")
+        fact  = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}'")
       end
     else
-      parameter = file_info[3..-1].join("_")
+      param = file_info[3..-1].join("_")
       case type
       when "pam"
-        fact = Facter::Util::Resolution.exec("cat #{config_file} |grep -v '^#' |grep '#{parameter}'")
+        fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}'")
       when /ssh|apache/
-        fact = Facter::Util::Resolution.exec("cat #{config_file} |grep -v '^#' |grep '#{parameter}' |grep -v '#{parameter}[A-z,0-9]' |awk '{print $2}'")
+        fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}' |grep -v '#{param}[A-z,0-9]' |awk '{print $2}'")
       when "aliases"
-        fact = Facter::Util::Resolution.exec("cat #{config_file} |grep -v '^#' |grep '#{parameter}' |grep -v '#{parameter}[A-z,0-9]' |cut -f2 -d: |sed 's/ //g'")
+        fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}' |grep -v '#{param}[A-z,0-9]' |cut -f2 -d: |sed 's/ //g'")
       else
-        fact = Facter::Util::Resolution.exec("cat #{config_file} |grep -v '^#' |grep '#{parameter}' |grep -v '#{parameter}[A-z,0-9]' |cut -f2 -d= |sed 's/ //g'")
+        fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}' |grep -v '#{param}[A-z,0-9]' |cut -f2 -d= |sed 's/ //g'")
       end
     end
   end
@@ -102,25 +102,25 @@ def handle_sunos_resourcefiles(type,file_info)
 end
 
 def handle_sunos_coreadm(type,file_info)
-  parameter = file_info[3..-1].join(" ")
-  fact      = Facter::Util::Resolution.exec("coreadm |grep '#{parameter}' |cut -f2 -d: |sed 's/^ //g'")
+  param = file_info[3..-1].join(" ")
+  fact  = Facter::Util::Resolution.exec("coreadm |grep '#{param}' |cut -f2 -d: |sed 's/^ //g'")
   return fact
 end
 
 def handle_sunos_logadm(type,file_info)
-  log_name = "/"+file_info[3..-1].join("/")
-  fact     = Facter::Util::Resolution.exec("logadm -V |grep -v '^#' |grep '#{log_name}'")
+  log  = "/"+file_info[3..-1].join("/")
+  fact = Facter::Util::Resolution.exec("logadm -V |grep -v '^#' |grep '#{log}'")
   return fact
 end
 
 def handle_sunos_ndd(type,file_info,os_version)
   if os_version =~ /10/
-    driver    = "/dev/"+file_info[3]
-    parameter = file_info[4..-2].join("_")
-    if parameter == "tcp_extra_priv_ports_add"
-      fact = Facter::Util::Resolution.exec("ndd -get #{driver} tcp_extra_priv_ports #{parameter}")
+    driver = "/dev/"+file_info[3]
+    param  = file_info[4..-2].join("_")
+    if param == "tcp_extra_priv_ports_add"
+      fact = Facter::Util::Resolution.exec("ndd -get #{driver} tcp_extra_priv_ports #{param}")
     else
-      fact = Facter::Util::Resolution.exec("ndd -get #{driver} #{parameter}")
+      fact = Facter::Util::Resolution.exec("ndd -get #{driver} #{param}")
     end
   end
   return fact
@@ -128,9 +128,9 @@ end
 
 def handle_sunos_ipadm(type,file_info,os_version)
   if os_version =~ /11/
-    driver    = file_info[3]
-    parameter = "_"+file_info[4..-2].join("_")
-    fact      = Facter::Util::Resolution.exec("ipadm show-prop #{driver} -co current #{parameter}")
+    driver = file_info[3]
+    param  = "_"+file_info[4..-2].join("_")
+    fact   = Facter::Util::Resolution.exec("ipadm show-prop #{driver} -co current #{param}")
   end
   return fact
 end
@@ -139,13 +139,13 @@ def handle_sunos_inetadm(file_info)
   if os_version =~ /10|11/
     file_info = file_info[3..-1].join("_")
     if file_info =~ /param/
-      (service,parameter) = file_info.split("_param_")
+      (service,param) = file_info.split("_param_")
       if service !~ /^svc/
         service = "svc:/"+service
       else
         service = service.gsub(/_/,"/")
       end
-      fact    = Facter::Util::Resolution.exec("inetadm -l #{service} |grep #{parameter} |cut -f2 -d=")
+      fact = Facter::Util::Resolution.exec("inetadm -l #{service} |grep #{param} |cut -f2 -d=")
     end
   end
   return fact
@@ -155,15 +155,15 @@ def handle_sunos_svc(file_info,os_version)
   if os_version =~ /10|11/
     file_info = file_info[3..-1].join("_")
     if file_info =~ /prop/
-      (service,parameter) = file_info.split(/_prop_/)
+      (service,param) = file_info.split(/_prop_/)
       if service !~ /^svc/
-        service   = "svc:/"+service.gsub(/_/,"/")
+        service = "svc:/"+service.gsub(/_/,"/")
       else
         service = service.gsub(/_/,"/")
       end
-      parameter = parameter.split("_")
-      parameter = parameter[0]+"/"+parameter[1..-1].join("_")
-      fact      = Facter::Util::Resolution.exec("svcprop -p #{parameter} #{service}")
+      param = param.split("_")
+      param = param[0]+"/"+param[1..-1].join("_")
+      fact  = Facter::Util::Resolution.exec("svcprop -p #{param} #{service}")
     end
   end
   return fact
@@ -171,8 +171,8 @@ end
 
 def handle_sunos_routeadm(file_info,os_version)
   if os_version =~ /10|11/
-    parameter = file_info[3]
-    fact      = Facter::Util::Resolution.exec("routeadm -p #{parameter} |cut -f6 -d= |sed 's/ //g'")
+    param = file_info[3]
+    fact  = Facter::Util::Resolution.exec("routeadm -p #{param} |cut -f6 -d= |sed 's/ //g'")
   end
   return fact
 end
@@ -180,7 +180,7 @@ end
 def handle_sunos(kernel,modname,type,file_info,fact,os_version)
   case type
   when /cron$|login|sys-suspend|passwd|system|^audit/
-    fact = get_parameter_value(kernel,modname,type,file_info)
+    fact = get_param_value(kernel,modname,type,file_info)
   when /xresourcesfiles|xsysresourcesfiles/
     fact = handle_sunos_resourcefiles(type,file_info)
   when "coreadm"
@@ -206,7 +206,7 @@ end
 def handle_freebsd(kernel,modname,type,file_info,fact)
   case type
   when /login|rc|sysctl/
-    fact = get_parameter_value(kernel,modname,type,file_info)
+    fact = get_param_value(kernel,modname,type,file_info)
   end
   return fact
 end
@@ -215,20 +215,20 @@ end
 
 def get_config_file(kernel,modname,type)
   file_name   = type+"configfile"
-  config_file = modname+"_"+kernel.downcase+"_"+file_name
-  config_file = Facter.value(config_file)
-  if config_file !~ /[A-z]/
-    config_file = handle_configfile(kernel,type,file_type)
+  file = modname+"_"+kernel.downcase+"_"+file_name
+  file = Facter.value(file)
+  if file !~ /[A-z]/
+    file = handle_configfile(kernel,type,file_type)
   end
-  return config_file
+  return file
 end
 
 # Linux specific facts
 
 def handle_prelink_status(kernel,modname,type)
-  config_file = get_config_file(kernel,modname,type)
+  file = get_config_file(kernel,modname,type)
   if File.exists?(file_name)
-    fact = Facter::Util::Resolution.exec("cat #{config_file} |grep PRELINKING |cut -f2 -d= |sed 's/ //g'")
+    fact = Facter::Util::Resolution.exec("cat #{file} |grep PRELINKING |cut -f2 -d= |sed 's/ //g'")
   end
   return fact
 end
@@ -236,16 +236,16 @@ end
 def handle_linux_audit(file_info)
   file_name = file_info.join("_")
   if file_name =~ /_etc_|_var_|_run_|_sbin_/
-    parameter = file_info[3..-1].join("/")
+    param = file_info[3..-1].join("/")
   else
     if file_name =~ /_log_/
-      parameter = file_info[3..-1].join("_")
+      param = file_info[3..-1].join("_")
     else
-      parameter = file_info[3..-1].join(" ")
+      param = file_info[3..-1].join(" ")
     end
   end
   if File.exists?(file_name)
-    fact = Facter::Util::Resolution.exec("cat /etc/audit/audit.rules |grep ' #{parameter} '")
+    fact = Facter::Util::Resolution.exec("cat /etc/audit/audit.rules |grep ' #{param} '")
   end
   return fact
 end
@@ -253,7 +253,7 @@ end
 def handle_linux(kernel,modname,type,file_info,os_distro,fact)
   case type
   when /avahi|yum|sysctl/
-    fact = get_parameter_value(kernel,modname,type,file_info)
+    fact = get_param_value(kernel,modname,type,file_info)
   when "prelinkstatus"
     fact = handle_prelink_status(kernel,modname,type)
   when "audit"
@@ -273,17 +273,17 @@ def handle_darwin_managednode()
 end
 
 def handle_darwin_dscl(subtype,file_info)
-  parameter = file_info[4]
+  param = file_info[4]
   if subtype != "root"
     subtype = subtype.capitalize
   end
-  fact = Facter::Util::Resolution.exec("dscl . -read /Users/#{subtype} #{parameter} 2>&1 |awk -F: '{print $(NF)}' |sed 's/ //g'")
+  fact = Facter::Util::Resolution.exec("dscl . -read /Users/#{subtype} #{param} 2>&1 |awk -F: '{print $(NF)}' |sed 's/ //g'")
   return fact
 end
 
 def handle_darwin_defaults(subtype,file_info)
-  parameter = file_info[4]
-  fact      = Facter::Util::Resolution.exec("defaults read /Library/Preferences/#{subtype} #{parameter} 2>&1 |grep -v default |sed 's/ $//g'")
+  param = file_info[4]
+  fact  = Facter::Util::Resolution.exec("defaults read /Library/Preferences/#{subtype} #{param} 2>&1 |grep -v default |sed 's/ $//g'")
   return fact
 end
 
@@ -293,8 +293,8 @@ def handle_darwin_pmset(subtype)
 end
 
 def handle_darwin_pwpolicy(modname,subtype)
-  managednode = Facter.value("#{modname}_darwin_system_managednode")
-  fact        = Facter::Util::Resolution.exec("pwpolicy -n #{managednode} -getglobalpolicy #{subtype} 2>&1 |cut -f2 -d= |sed 's/ //g'")
+  node = Facter.value("#{modname}_darwin_system_managednode")
+  fact = Facter::Util::Resolution.exec("pwpolicy -n #{node} -getglobalpolicy #{subtype} 2>&1 |cut -f2 -d= |sed 's/ //g'")
   return fact
 end
 
@@ -306,7 +306,7 @@ end
 def handle_darwin(kernel,modname,type,subtype,file_info,fact)
   case type
   when "hostconfig"
-    fact = get_parameter_value(kernel,modname,type,file_info)
+    fact = get_param_value(kernel,modname,type,file_info)
   when "managednode"
     fact = handle_darwin_managednode()
   when "pmset"
@@ -326,16 +326,16 @@ end
 # AIX specific facts
 
 def handle_aix_trustchk(file_info)
-  parameter = file_info[3..-1].join("_")
-  fact = Facter::Util::Resolution.exec("/usr/sbin/trustchk -p #{parameter} 2>&1 |cut -f2 -d=")
+  param = file_info[3..-1].join("_")
+  fact  = Facter::Util::Resolution.exec("/usr/sbin/trustchk -p #{param} 2>&1 |cut -f2 -d=")
   return fact
 end
 
 def handle_aix_lssec(file_info)
-  sec_file   = file_info[3]
-  sec_stanza = file_info[4]
-  parameter  = file_info[5]
-  fact = Facter::Util::Resolution.exec("lssec -f #{sec_file} -s #{sec_stanza} -a #{parameter} 2>&1 |awk '{print $2}' |cut -f2 -d=")
+  file   = file_info[3]
+  stanza = file_info[4]
+  param  = file_info[5]
+  fact   = Facter::Util::Resolution.exec("lssec -f #{file} -s #{stanza} -a #{param} 2>&1 |awk '{print $2}' |cut -f2 -d=")
   return fact
 end
 
@@ -352,21 +352,21 @@ end
 # Handle syslog type
 
 def handle_syslog(kernel,modname,type,file_info)
-  facility    = file_info[3]
-  config_file = get_config_file(kernel,modname,type)
-  fact     = Facter::Util::Resolution.exec("cat #{config_file} | grep -v '^#' |grep '#{facility}'")
+  fac  = file_info[3]
+  file = get_config_file(kernel,modname,type)
+  fact = Facter::Util::Resolution.exec("cat #{file} | grep -v '^#' |grep '#{fac}'")
   return fact
 end
 
 # Handle pam type
 
 def handle_pam(kernel,type,file_info)
-  mod_name  = file_info[3]
-  parameter = file_info[4..-1].join("_")
+  mod   = file_info[3]
+  param = file_info[4..-1].join("_")
   if kernel == "SunOS"
-    fact = Facter::Util::Resolution.exec("cat /etc/pam.conf |grep '^#{mod_name}' |grep '#{parameter}'")
+    fact = Facter::Util::Resolution.exec("cat /etc/pam.conf |grep '^#{mod}' |grep '#{param}'")
   else
-    fact = Facter::Util::Resolution.exec("cat /etc/pam.d/#{mod_name}' |grep '#{parameter}'")
+    fact = Facter::Util::Resolution.exec("cat /etc/pam.d/#{mod}' |grep '#{param}'")
   end
 end
 # Handle duplicate type
@@ -399,101 +399,101 @@ def handle_file(kernel,modname,type,subtype,file_info)
   file_info = file_info[3..-1].join("_")
   if file_info =~ /param/
     if file_info =~ /parameter/
-      (config_file,parameter) = file_info.split("_parameter_")
+      (file,param) = file_info.split("_parameter_")
     else
-      (config_file,parameter) = file_info.split("_param_")
+      (file,param) = file_info.split("_param_")
     end
-    parameter = parameter.gsub(/_star_/,"\*")
-    parameter = parameter.gsub(/_bang_/,"\!")
-    parameter = parameter.gsub(/_/," ")
-    if config_file =~ /^system|^apache/
-      if config_file =~ /system/
-        config_file = "/etc/system"
-        parameter   = parameter.gsub(/\./,':')
+    param = param.gsub(/_star_/,"\*")
+    param = param.gsub(/_bang_/,"\!")
+    param = param.gsub(/_/," ")
+    if file =~ /^system|^apache/
+      if file =~ /system/
+        file = "/etc/system"
+        param   = param.gsub(/\./,':')
       end
-      if config_file =~ /apache/
-        config_file = modname+"_"+kernel.downcase+"_apacheconfigfile"
-        config_file = Facter.value(config_file)
+      if file =~ /apache/
+        file = modname+"_"+kernel.downcase+"_apacheconfigfile"
+        file = Facter.value(file)
       end
     else
-      config_file = config_file.gsub(/^_/,"")
-      config_file = config_file.gsub(/_/,"/")
-      config_file = config_file.gsub(/bash\/profile$/,"bash_profile")
-      if config_file =~ /attr$|class$|privs$|warn$/
-        config_info = config_file.split(/\//)
-        config_file = config_info[0..-2]+"_"+config_info[-1]
+      file = file.gsub(/^_/,"")
+      file = file.gsub(/_/,"/")
+      file = file.gsub(/bash\/profile$/,"bash_profile")
+      if file =~ /attr$|class$|privs$|warn$/
+        info = file.split(/\//)
+        file = info[0..-2]+"_"+info[-1]
       end
-      config_file = "/"+config_file
+      file = "/"+file
     end
-    if config_file =~ /hostconfig/
+    if file =~ /hostconfig/
       separator = "="
     end
-    if config_file =~ /hosts\,allow|hosts\,deny/
+    if file =~ /hosts\,allow|hosts\,deny/
       separator = ":"
     end
-    if File.exists?(config_file)
+    if File.exists?(file)
       if separator == " "
-        if parameter !~ /^#/
-          fact = Facter::Util::Resolution.exec("cat #{config_file} |grep -v '^#{comment}' |grep '^#{parameter}' |grep -v '#{parameter}[A-z,0-9]' |awk '{print $2}' |sed 's/ $//g'")
+        if param !~ /^#/
+          fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#{comment}' |grep '^#{param}' |grep -v '#{param}[A-z,0-9]' |awk '{print $2}' |sed 's/ $//g'")
         else
-          fact = Facter::Util::Resolution.exec("cat #{config_file} |grep '^#{parameter}' |grep -v '#{parameter}[A-z,0-9]' |awk '{print $2}' |sed 's/ $//g'")
+          fact = Facter::Util::Resolution.exec("cat #{file} |grep '^#{param}' |grep -v '#{param}[A-z,0-9]' |awk '{print $2}' |sed 's/ $//g'")
         end
       else
-        if parameter !~ /^#/
-          fact = Facter::Util::Resolution.exec("cat #{config_file} |grep -v '^#{comment}' |grep '^#{parameter}' |grep -v '#{parameter}[A-z,0-9]' |awk -F#{separator} '{print $2}' |sed 's/ $//g'")
+        if param !~ /^#/
+          fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#{comment}' |grep '^#{param}' |grep -v '#{param}[A-z,0-9]' |awk -F#{separator} '{print $2}' |sed 's/ $//g'")
         else
-          fact = Facter::Util::Resolution.exec("cat #{config_file} |grep '^#{parameter}' |grep -v '#{parameter}[A-z,0-9]' |awk -F#{separator} '{print $2}' |sed 's/ $//g'")
+          fact = Facter::Util::Resolution.exec("cat #{file} |grep '^#{param}' |grep -v '#{param}[A-z,0-9]' |awk -F#{separator} '{print $2}' |sed 's/ $//g'")
         end
       end
     end
   end
   if file_info =~ /line|match/
     if file_info =~ /match/
-      (config_file,line) = file_info.split("_match_")
+      (file,line) = file_info.split("_match_")
     else
-      (config_file,line) = file_info.split("_line_")
+      (file,line) = file_info.split("_line_")
     end
     line = line.gsub(/_star_/,"\*")
     line = line.gsub(/_bang_/,"\!")
-    if file_info !~ /match/ and config_file !~ /pam/
+    if file_info !~ /match/ and file !~ /pam/
       line = line.gsub(/_/," ")
     end
-    if config_file =~ /^system|^apache/
-      if config_file =~ /system/
-        config_file = "/etc/system"
-        line        = line.gsub(/^_/)
+    if file =~ /^system|^apache/
+      if file =~ /system/
+        file = "/etc/system"
+        line = line.gsub(/^_/)
       end
-      if config_file =~ /apache/
-        config_file = modname+"_"+kernel+"_qpacheconfigfile"
-        config_file = Facter.value(config_file)
-        line        = line.gsub(/^_/,"")
-        line        = line.gsub(/_/," ")
+      if file =~ /apache/
+        file = modname+"_"+kernel+"_qpacheconfigfile"
+        file = Facter.value(file)
+        line = line.gsub(/^_/,"")
+        line = line.gsub(/_/," ")
       end
-      if config_file =~ /allow|deny/
+      if file =~ /allow|deny/
         line = line.gsub(/:_/,": ")
       end
     else
-      config_file = config_file.gsub(/^_/,"")
-      config_file = config_file.gsub(/_/,"/")
-      config_file = "/"+config_file
-      config_file = config_file.gsub(/bash\/profile$/,"bash_profile")
-      if config_file =~ /attr$|class$|privs$|warn$/
-        config_info = config_file.split(/\//)
-        config_file = config_info[0..-2]+"_"+config_info[-1]
+      file = file.gsub(/^_/,"")
+      file = file.gsub(/_/,"/")
+      file = "/"+file
+      file = file.gsub(/bash\/profile$/,"bash_profile")
+      if file =~ /attr$|class$|privs$|warn$/
+        info = file.split(/\//)
+        file = info[0..-2]+"_"+config_info[-1]
       end
     end
-    if File.exists?(config_file)
+    if File.exists?(file)
       if file_info =~ /line/
         if line !~ /^#/
-          fact = Facter::Util::Resolution.exec("cat #{config_file} |grep -v '^#{comment}' |grep '^#{line}' |sed 's/ $//g'")
+          fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#{comment}' |grep '^#{line}' |sed 's/ $//g'")
         else
-          fact = Facter::Util::Resolution.exec("cat #{config_file} |grep '^#{line}' |sed 's/ $//g'")
+          fact = Facter::Util::Resolution.exec("cat #{file} |grep '^#{line}' |sed 's/ $//g'")
         end
       else
         if line !~ /^#/
-          fact = Facter::Util::Resolution.exec("cat #{config_file} |grep -v '^#{comment}' |grep '#{line}' |sed 's/ $//g'")
+          fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#{comment}' |grep '#{line}' |sed 's/ $//g'")
         else
-          fact = Facter::Util::Resolution.exec("cat #{config_file} |grep '#{line}' |sed 's/ $//g'")
+          fact = Facter::Util::Resolution.exec("cat #{file} |grep '#{line}' |sed 's/ $//g'")
         end
       end
     end
@@ -549,29 +549,29 @@ def handle_configfile(kernel,type,file_info)
   end
   case prefix
   when /^audit|^exec/
-    config_file = "/etc/security/"+prefix.gsub(/class/,"_class")
+    file = "/etc/security/"+prefix.gsub(/class/,"_class")
   when /cron|sys-suspend|passwd/
-    config_file = "/etc/default/#{prefix}"
+    file = "/etc/default/#{prefix}"
   when /system/
-    config_file = "/etc/system"
+    file = "/etc/system"
   when /policy/
-    config_file = "/etc/security/policy.conf"
+    file = "/etc/security/policy.conf"
   when /hostsallow/
-    config_file = "/etc/hosts.allow"
+    file = "/etc/hosts.allow"
   when /hostsdeny/
-    config_file = "/etc/hosts.deny"
+    file = "/etc/hosts.deny"
   when /sendmailcf/
-    config_file = "/etc/mail/sendmail.cf"
+    file = "/etc/mail/sendmail.cf"
   else
-    config_file = ""
+    file = ""
   end
-  if config_file !~ /[A-z]/
+  if file !~ /[A-z]/
     if prefix =~ /aliases/
       search_file = prefix
     else
       search_file = prefix+".conf"
     end
-    config_file_list = []
+    file_list = []
     dir_list = [
       '/etc' '/etc/sfw', '/etc/apache', '/etc/apache2', '/etc/default',
       '/etc/sysconfig', '/usr/local/etc', '/usr/sfw/etc', '/opt/sfw/etc',
@@ -579,14 +579,14 @@ def handle_configfile(kernel,type,file_info)
       '/etc/mail','/etc/krb5','etc/snmp','/etc/selinux','/etc/grub'
     ]
     dir_list.each do |dir_name|
-      config_file=dir_name+"/"+search_file
-      if File.exists?(config_file)
-        config_file_list.push(config_file)
+      file=dir_name+"/"+search_file
+      if File.exists?(file)
+        file_list.push(file)
       end
     end
-    config_file = config_file_list[0]
+    file = file_list[0]
   end
-  return config_file
+  return file
 end
 
 # Handle services type
@@ -739,19 +739,19 @@ def handle_readwrite(type,file_info)
   dir_name = "/"+dir_name.join("/")
   if type =~ /byothers/
     if type =~ /readableorwritable/
-      fact     = %x[fine #{dir_name} -type f -perm +066]
+      fact = %x[fine #{dir_name} -type f -perm +066]
     else
-      fact     = %x[fine #{dir_name} -type f -perm +022]
+      fact = %x[fine #{dir_name} -type f -perm +022]
     end
   else
     if type =~ /readableorwritable/
-      fact     = %x[fine #{dir_name} -type f -perm +006]
+      fact = %x[fine #{dir_name} -type f -perm +006]
     else
-      fact     = %x[fine #{dir_name} -type f -perm +002]
+      fact = %x[fine #{dir_name} -type f -perm +002]
     end
   end
-  fact     = fact.split("\n")
-  fact     = fact.join(",")
+  fact = fact.split("\n")
+  fact = fact.join(",")
   return fact
 end
 
@@ -799,8 +799,8 @@ end
 # Handle symlink type
 
 def handle_symlink(file_info)
-  file_name = file_info[3..-1].join("/")
-  fact      = File.readlink(file_name)
+  file = file_info[3..-1].join("/")
+  fact = File.readlink(file)
   return fact
 end
 
@@ -808,23 +808,23 @@ end
 
 def handle_xml_types(type,file_info)
   if type == "launchctl"
-    config_file = "/System/Library/LaunchDaemons/"+file_info[3]+".plist"
-    parameter   = file_info[4..-1].join("_")
+    file  = "/System/Library/LaunchDaemons/"+file_info[3]+".plist"
+    param = file_info[4..-1].join("_")
   else
     if file_info =~ /param/
-      if file_info =~ /parameter/
-        (config_file,parameter) = file_info.split("_parameter_")
+      if file_info =~ /param/
+        (file,param) = file_info.split("_param_")
       else
-        (config_file,parameter) = file_info.split("_param_")
+        (file,param) = file_info.split("_param_")
       end
     end
   end
-  if File.exists?(config_file)
-    xml_file = File.new(config_file)
+  if File.exists?(file)
+    xml_file = File.new(file)
     xml_doc  = REXML::Document.new xml_file
     if type == "launchctl"
       fact   = []
-      if parameter == "ProgramArguments"
+      if param == "ProgramArguments"
         xml_doc.elements.each("//array/string") do |element|
           fact.push(element.text)
         end
@@ -1045,10 +1045,10 @@ end
 # Handle sudo type
 
 def handle_sudo(kernel,modname,type,file_info)
-  config_file = get_config_file(kernel,modname,type)
-  parameter   = file_info[3]
-  if File.exists?(config_file)
-    fact = Facter::Util::Resolution.exec("cat #{config_file} |grep #{parameter}")
+  file  = get_config_file(kernel,modname,type)
+  param = file_info[3]
+  if File.exists?(file)
+    fact = Facter::Util::Resolution.exec("cat #{file} |grep #{param}")
   end
   return fact
 end
@@ -1087,9 +1087,9 @@ end
 # Handle crontab
 
 def get_user_crontab(kernel,modname,type,file_info)
-  user_name = file_info[3]
-  cron_file = get_user_cron_file(kernel,modname,type,user_name)
-  fact      = %x[sudo cat #{cron_file}]
+  user = file_info[3]
+  cron = get_user_cron_file(kernel,modname,type,user)
+  fact = %x[sudo cat #{cron}]
   return fact
 end
 
@@ -1122,6 +1122,22 @@ def handle_sshkeyfiles(kernel,type)
     fact = %x[find #{ssh_dir} -name "authorized_keys*"]
   end
   fact = fact.gsub(/\n/,",")
+  return fact
+end
+
+# Handle primarygroup
+
+def handle_primarygroup(type)
+  gid  = handle_primarygid(type)
+  fact = Facter::Util::Resolution.exec("cat /etc/group |grep ':#{gid}:' |cut -f1 -d:")
+  return fact
+end
+
+# Handle primarygid
+
+def handle_primarygid(type)
+  user = type.gsub(/primarygroup/,"")
+  fact = Facter::Util::Resolution.exec("cat /etc/passwd |grep '^#{user}:' |cut -f4 -d:")
   return fact
 end
 
@@ -1184,6 +1200,10 @@ if file_name !~ /template|operatingsystemupdate/
           end
         end
         case type
+        when /primarygroup/
+          fact = handle_primarygroup(type)
+        when /primarygid/
+          fact = handle_primarygid(type)
         when /sshkeyfiles/
           fact = handle_sshkeyfiles(type)
         when /sshkeys/
@@ -1213,7 +1233,7 @@ if file_name !~ /template|operatingsystemupdate/
         when "sudo"
           fact = handle_sudo(kernel,modname,type,file_info)
         when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|selinux$|cups$|apache$/
-          fact = get_parameter_value(kernel,modname,type,file_info)
+          fact = get_param_value(kernel,modname,type,file_info)
         when "groupexists"
           fact = handle_groupexists(file_info)
         when "sulogin"

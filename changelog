@@ -107,3 +107,5 @@
 # Added routeadm type for Solaris
 # 0.5.4: Wed 14 May 2014 17:08:33 EST
 # Added sshkeys and sshkeyfiles types
+# 0.5.5: Thu 15 May 2014 08:30:17 EST
+# Added primarygroup/gid types and cleaned up code
