@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.5.2
+# Version:      0.5.3
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -166,6 +166,15 @@ def handle_sunos_svc(file_info,os_version)
       fact      = Facter::Util::Resolution.exec("svcprop -p #{parameter} #{service}")
     end
   end
+  return fact
+end
+
+def handle_sunos_routeadm(file_info,os_version)
+  if os_version =~ /10|11/
+    parameter = file_info[3]
+    fact      = Facter::Util::Resolution.exec("routeadm -p #{parameter} |cut -f6 -d= |sed 's/ //g'")
+  end
+  return fact
 end
 
 def handle_sunos(kernel,modname,type,file_info,fact,os_version)
@@ -186,6 +195,8 @@ def handle_sunos(kernel,modname,type,file_info,fact,os_version)
     fact = handle_sunos_inetadm(file_info,os_version)
   when "svc"
     fact = handle_sunos_svc(file_info,os_version)
+  when "routeadm"
+    fact = handle_sunos_routeadm(file_info,os_version)
   end
   return fact
 end

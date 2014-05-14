@@ -103,3 +103,5 @@
 # Added grub and selinux types
 # 0.5.2: Wed 14 May 2014 10:43:51 EST
 # Added svc type to handle svcprop on Solaris
+# 0.5.3: Wed 14 May 2014 14:27:03 EST
+# Added routeadm type for Solaris
