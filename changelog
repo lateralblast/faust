@@ -105,3 +105,5 @@
 # Added svc type to handle svcprop on Solaris
 # 0.5.3: Wed 14 May 2014 14:27:03 EST
 # Added routeadm type for Solaris
+# 0.5.4: Wed 14 May 2014 17:08:33 EST
+# Added sshkeys and sshkeyfiles types

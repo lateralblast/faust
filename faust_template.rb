@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.5.3
+# Version:      0.5.4
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -48,7 +48,7 @@ $fs_search = "no"
 
 # Get the members of a group
 
-def get_group_members(type)
+def handle_groupmembers(type)
   group = type.gsub(/groupmembers/,"")
   fact  = Facter::Util::Resolution.exec("cat /etc/group |grep '#{group}:' |cut -f4 -d:")
   return fact
@@ -162,7 +162,7 @@ def handle_sunos_svc(file_info,os_version)
         service = service.gsub(/_/,"/")
       end
       parameter = parameter.split("_")
-      prameter  = parameter[0]+"/"+parameter[1..-1].join("_")
+      parameter = parameter[0]+"/"+parameter[1..-1].join("_")
       fact      = Facter::Util::Resolution.exec("svcprop -p #{parameter} #{service}")
     end
   end
@@ -1093,6 +1093,38 @@ def get_user_crontab(kernel,modname,type,file_info)
   return fact
 end
 
+# Handle sshkeys
+
+def handle_sshkeys(kernel,type)
+  key_files = handle_sshkeyfiles(type)
+  key_files = key_files.split(",")
+  key_files.each do |key_file|
+    if File.exist?(key_file)
+      ssh_keys = %x[cat #{key_file}]
+      fact     = fact.push(ssh_keys)
+    end
+  end
+  fact = fact.join("\n")
+  return fact
+end
+
+# Handle sshkeyfiles
+
+def handle_sshkeyfiles(kernel,type)
+  user_name = type.gsub(/sshkeyfiles/,"")
+  if kernel == "Darwin" and user_name != "root"
+    home_dir = "/Users/"+user_name
+  else
+    home_dir = %x[grep '#{user_name}:' /etc/passed |cut -f6 -d:].chomp
+  end
+  ssh_dir = home_dir+"/.ssh"
+  if File.directory?(ssh_dir)
+    fact = %x[find #{ssh_dir} -name "authorized_keys*"]
+  end
+  fact = fact.gsub(/\n/,",")
+  return fact
+end
+
 # Main code
 
 if file_name !~ /template|operatingsystemupdate/
@@ -1152,6 +1184,10 @@ if file_name !~ /template|operatingsystemupdate/
           end
         end
         case type
+        when /sshkeyfiles/
+          fact = handle_sshkeyfiles(type)
+        when /sshkeys/
+          fact = handle_sshkeys(type)
         when /rhostfiles|netrcfiles|readabledotfiles/
           fact = handle_readablefiles_types(type)
         when "symlink"
@@ -1163,7 +1199,7 @@ if file_name !~ /template|operatingsystemupdate/
         when /^nis/
           fact = handle_nis(type)
         when /groupmembers/
-          fact = get_group_members(type)
+          fact = handle_groupmembers(type)
         when /xml|plist|launchctl/
           fact = handle_xml_types(type,file_info)
         when /syslog/
