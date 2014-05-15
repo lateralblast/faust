@@ -1141,6 +1141,14 @@ def handle_primarygid(type)
   return fact
 end
 
+# Handle homedir
+
+def handle_homedir(type)
+  user = type.gsub(/homedir/,"")
+  fact = Facter::Util::Resolution.exec("cat /etc/passwd |grep '^#{user}:' |cut -f6 -d:")
+  return fact
+end
+
 # Main code
 
 if file_name !~ /template|operatingsystemupdate/
@@ -1204,6 +1212,8 @@ if file_name !~ /template|operatingsystemupdate/
           fact = handle_primarygroup(type)
         when /primarygid/
           fact = handle_primarygid(type)
+        when /homedir/
+          fact = handle_homedir(type)
         when /sshkeyfiles/
           fact = handle_sshkeyfiles(type)
         when /sshkeys/
