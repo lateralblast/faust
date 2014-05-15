@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.5.8
+# Version:      0.5.9
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -332,9 +332,21 @@ def handle_aix_trustchk(file_info)
 end
 
 def handle_aix_lssec(file_info)
-  file   = file_info[3]
-  stanza = file_info[4]
-  param  = file_info[5]
+  if file_info =~ /security/
+    file   = "/"+file_info[3..5].join("/")
+    stanza = file_info[6]
+    param  = file_info[7]
+  else
+    file   = file_info[3]
+    if file =~ /login/
+      file = "/etc/security/login.cfg"
+    end
+    if file =~ /user/
+      file = "/etc/secuity/user"
+    end
+    stanza = file_info[4]
+    param  = file_info[5]
+  end
   fact   = Facter::Util::Resolution.exec("lssec -f #{file} -s #{stanza} -a #{param} 2>&1 |awk '{print $2}' |cut -f2 -d=")
   return fact
 end

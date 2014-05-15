@@ -115,3 +115,5 @@
 # Added env type
 # 0.5.8: Thu 15 May 2014 16:39:39 EST
 # Added shostsfiles and hostsequivfiles types
+# 0.5.9: Thu 15 May 2014 18:05:55 EST
+# Cleaned up lssec type for AIX
