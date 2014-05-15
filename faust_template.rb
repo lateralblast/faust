@@ -1149,6 +1149,17 @@ def handle_homedir(type)
   return fact
 end
 
+def handle_env(type,file_info)
+  user  = type.gsub(/env$/,"")
+  if file_info[3]
+    param = file_info[3..-1].join("_")
+    fact = Facter::Util::Resolution.exec("sudo su - #{user} -c 'set' |grep '^#{param}'")
+  else
+    fact = %x[sudo su - #{user} -c 'set']
+  end
+  return fact
+end
+
 # Main code
 
 if file_name !~ /template|operatingsystemupdate/
@@ -1208,6 +1219,8 @@ if file_name !~ /template|operatingsystemupdate/
           end
         end
         case type
+        when /env$/
+          fact = handle_env(type,file_info)
         when /primarygroup/
           fact = handle_primarygroup(type)
         when /primarygid/
