@@ -113,3 +113,5 @@
 # Added homedir type
 # 0.5.7: Thu 15 May 2014 12:33:35 EST
 # Added env type
+# 0.5.8: Thu 15 May 2014 16:39:39 EST
+# Added shostsfiles and hostsequivfiles types

@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.5.4
+# Version:      0.5.8
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -1008,14 +1008,19 @@ end
 
 # Handle readable files types
 
-def handle_readablefiles_types(type)
+def handle_readablefiles(type)
   fact = []
   if type != "readabledotfiles"
     file_name = type.gsub(/files/,"")
-    file_name = "."+file_name
   end
-  home_dirs = %x[cat /etc/passwd |cut -f6 -d":" |grep -v "^/$" |grep -v '^#' |sort |uniq]
-  home_dirs = home_dirs.split(/\n/)
+  if file_name =~ /equiv/
+    file_name = "hosts.equiv"
+    home_dirs = [ '/etc' ]
+  else
+    file_name = "."+file_name
+    home_dirs = %x[cat /etc/passwd |cut -f6 -d":" |grep -v "^/$" |grep -v '^#' |sort |uniq]
+    home_dirs = home_dirs.split(/\n/)
+  end
   home_dirs.each do |home_dir|
     if File.directory?(home_dir)
       if type == "readabledotfiles"
@@ -1164,7 +1169,7 @@ end
 
 if file_name !~ /template|operatingsystemupdate/
   if file_name =~ /_chsec_/
-    file_name = file_name.gsub(/_chsec_/,"_lssec")
+    file_name = file_name.gsub(/_chsec_/,"_lssec_")
   end
   kernel = Facter.value("kernel")
   file_info = file_name.split("_")
@@ -1231,8 +1236,8 @@ if file_name !~ /template|operatingsystemupdate/
           fact = handle_sshkeyfiles(type)
         when /sshkeys/
           fact = handle_sshkeys(type)
-        when /rhostfiles|netrcfiles|readabledotfiles/
-          fact = handle_readablefiles_types(type)
+        when /rhostsfiles|shostsfiles|hostsequivfiles|netrcfiles|readabledotfiles/
+          fact = handle_readablefiles(type)
         when "symlink"
           fact = handle_symlink(file_info)
         when /cron$/
