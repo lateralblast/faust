@@ -118,4 +118,6 @@
 # 0.5.9: Thu 15 May 2014 18:05:55 EST
 # Cleaned up lssec type for AIX
 # 0.6.0: Fri 16 May 2014 14:43:32 EST
-# Added reservedids type
+# Added reserveduids type
+# 0.6.2: Sat 17 May 2014 08:18:53 EST
+# Added lsuser type for AIX

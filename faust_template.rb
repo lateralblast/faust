@@ -351,12 +351,36 @@ def handle_aix_lssec(file_info)
   return fact
 end
 
+def handle_aix_lsuser(file_info)
+  if file_info =~ /security/
+    file  = "/"+file_info[3..5].join("/")
+    user  = file_info[6]
+    group = file_info[7]
+    param = file_info[8]
+  else
+    file   = file_info[3]
+    if file =~ /login/
+      file = "/etc/security/login.cfg"
+    end
+    if file =~ /user/
+      file = "/etc/secuity/user"
+    end
+    user  = file_info[4]
+    group = file_info[5]
+    param = file_info[6]
+  end
+  fact = Facter::Util::Resolution.exec("lssec -f #{file} -s #{user} -a #{group} -a #{param} 2>&1 |awk '{print $2}' |cut -f2 -d=")
+  return fact
+end
+
 def handle_aix(type,file_info,fact)
   case type
   when "trustchk"
     handle_aix_trustchk(file_info)
   when "lssec"
     handle_aix_lssec(file_info)
+  when "lsuser"
+    handle_aix_lsuser(file_info)
   end
   return fact
 end
@@ -1176,9 +1200,9 @@ def handle_env(type,file_info)
   return fact
 end
 
-# Handle reservedids
+# Handle reserveduids
 
-def handle_reservedids()
+def handle_reserveduids()
   fact = %x[passwd | awk -F: '($3 < 100) { print $1 }']
   fact = fact.gsub(/\n/,"")
   return fact
@@ -1245,8 +1269,8 @@ if file_name !~ /template|operatingsystemupdate/
         case type
         when /env$/
           fact = handle_env(type,file_info)
-        when "reservedids"
-          fact = handle_reservedids()
+        when "reserveduids"
+          fact = handle_reserveduids()
         when /primarygroup/
           fact = handle_primarygroup(type)
         when /primarygid/
