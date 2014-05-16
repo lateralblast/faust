@@ -1070,8 +1070,6 @@ def handle_sudo(kernel,modname,type,file_info)
   return fact
 end
 
-
-
 # Get user/application cron file
 
 def get_user_crontab_file(kernel,modname,type,user_name)
@@ -1083,7 +1081,6 @@ def get_user_crontab_file(kernel,modname,type,user_name)
   end
   return cron_file
 end
-
 
 def handle_crontabfile(kernel,type,file_info)
   if type =~ /crontabfile/
@@ -1166,6 +1163,8 @@ def handle_homedir(type)
   return fact
 end
 
+# Handle env
+
 def handle_env(type,file_info)
   user  = type.gsub(/env$/,"")
   if file_info[3]
@@ -1174,6 +1173,14 @@ def handle_env(type,file_info)
   else
     fact = %x[sudo su - #{user} -c 'set']
   end
+  return fact
+end
+
+# Handle reservedids
+
+def handle_reservedids()
+  fact = %x[passwd | awk -F: '($3 < 100) { print $1 }']
+  fact = fact.gsub(/\n/,"")
   return fact
 end
 
@@ -1238,6 +1245,8 @@ if file_name !~ /template|operatingsystemupdate/
         case type
         when /env$/
           fact = handle_env(type,file_info)
+        when "reservedids"
+          fact = handle_reservedids()
         when /primarygroup/
           fact = handle_primarygroup(type)
         when /primarygid/
