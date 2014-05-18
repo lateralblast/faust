@@ -123,3 +123,5 @@
 # Added lsuser type for AIX
 # 0.6.3: Mon 19 May 2014 07:44:00 EST
 # Fixed systemservices type
+# 0.6.4: Mon 19 May 2014 09:05:52 EST
+# Fixed lsuser type
