@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.5.9
+# Version:      0.6.3
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -627,14 +627,14 @@ end
 
 # Handle services type
 
-def handle_services(kernel,type)
+def handle_services(kernel,type,os_distro)
   fact = ""
   if type == "rctcpservices"
     if kernel == "AIX"
       fact = %x[cat /etc/rc.tcpip |grep -v '^#' |awk '{print $2}']
     end
   end
-  if type =~ "systemservices"
+  if type == "systemservices"
     if kernel == "Darwin"
       fact = %x[launchctl list |awk '{print $3}' |grep -v '^Label']
     end
@@ -643,6 +643,21 @@ def handle_services(kernel,type)
         fact = %x[svcs -a |egrep '^online|^legacy' |awk '{print $3}']
       else
         fact = %x[find /etc/rc*.d -type f |grep -v '_[A-z]']
+      end
+    end
+    if kernel == "Linux"
+      if os_distro =~ /Red|SuSE|Scientific/
+        fact =%x[/sbin/chkconfig --list |grep on |awk '{print $1}']
+      end
+      if os_distro =~ /Ubuntu|Debian/
+        fact = %x[initctl list |grep run |awk'{print $1}'']
+      end
+    end
+  end
+  if type == "upstartservices"
+    if kernel == "Linux"
+      if os_distro =~ /Ubuntu|Debian/
+        fact = %x[initctl list |grep run |awk'{print $1}'']
       end
     end
   end

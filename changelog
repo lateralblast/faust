@@ -121,3 +121,5 @@
 # Added reserveduids type
 # 0.6.2: Sat 17 May 2014 08:18:53 EST
 # Added lsuser type for AIX
+# 0.6.3: Mon 19 May 2014 07:44:00 EST
+# Fixed systemservices type
