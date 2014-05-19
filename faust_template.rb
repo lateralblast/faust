@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.6.4
+# Version:      0.6.6
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -675,7 +675,7 @@ def handle_services(kernel,type,os_distro)
       fact = %x[/usr/sbin/consadm -p]
     end
     if kernel == "Linux"
-      fact = %x[cat /etc/securettys]
+      fact = %x[cat /etc/securetty]
     end
   end
   if type == "serialservices"
@@ -1216,7 +1216,15 @@ end
 # Handle reserveduids
 
 def handle_reserveduids()
-  fact = %x[passwd | awk -F: '($3 < 100) { print $1 }']
+  fact = %x[cat /etc/passwd | awk -F: '($3 < 100) { print $1 }']
+  fact = fact.gsub(/\n/,"")
+  return fact
+end
+
+# Handle userlist
+
+def handle_userlist()
+  fact = %x[cat /etc/passwd |cut -f1 -d:]
   fact = fact.gsub(/\n/,"")
   return fact
 end
@@ -1282,6 +1290,8 @@ if file_name !~ /template|operatingsystemupdate/
         case type
         when /env$/
           fact = handle_env(type,file_info)
+        when "userlist"
+          fact = handle_userlist()
         when "reserveduids"
           fact = handle_reserveduids()
         when /primarygroup/

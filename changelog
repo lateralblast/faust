@@ -127,3 +127,5 @@
 # Fixed lsuser type
 # 0.6.5: Mon 19 May 2014 13:31:04 EST
 # Added consoleservices type
+# 0.6.6: Tue 20 May 2014 08:57:15 EST
+# Added userlist type and fixed consoleservices
