@@ -670,6 +670,14 @@ def handle_services(kernel,type,os_distro)
       fact = %x[lsitab -a |grep -v '^#' |cut -f1 -d:]
     end
   end
+  if type == "consoleservices"
+    if kernel == "SunOS"
+      fact = %x[/usr/sbin/consadm -p]
+    end
+    if kernel == "Linux"
+      fact = %x[cat /etc/securettys]
+    end
+  end
   if type == "serialservices"
     if  kernel == "AIX"
       fact = %x[lsitab –a |grep 'on:/usr/sbin/getty']
