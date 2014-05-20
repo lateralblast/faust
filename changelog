@@ -132,4 +132,6 @@
 # 0.6.7: Tue 20 May 2014 13:43:50 EST
 # Added systemprofiler type
 # 0.6.8: Tue 20 May 2014 15:37:55 EST
-# Added power type
+# Added power type and fixed systemservices type
+# 0.6.9: ue 20 May 2014 22:00:42 EST
+# Added mail and postfix types

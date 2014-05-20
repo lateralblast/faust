@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.6.8
+# Version:      0.6.9
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -580,7 +580,7 @@ end
 
 # Handle configfile type
 
-def handle_configfile(kernel,type,file_info)
+def handle_configfile(kernel,type,file_info,os_distro)
   if type !~ /configfile/
     type = file_info
   end
@@ -606,6 +606,10 @@ def handle_configfile(kernel,type,file_info)
     file = "/etc/default/#{prefix}"
   when /system/
     file = "/etc/system"
+  when /^mail/
+    file = "/etc/sysconfig/mail"
+  when /postfix/
+    file = "/etc/postfix/main.cf"
   when /policy/
     file = "/etc/security/policy.conf"
   when /hostsallow/
@@ -1380,7 +1384,7 @@ if file_name !~ /template|operatingsystemupdate/
         when /duplicate/
           fact = handle_duplicate(type,file_info)
         when /configfile/
-          fact = handle_configfile(kernel,type,file_info)
+          fact = handle_configfile(kernel,type,file_info,os_distron)
         when /crontabfile/
           fact = handle_crontabfile(kernel,type,file_info)
         when "pam"
