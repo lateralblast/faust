@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.6.6
+# Version:      0.6.8
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -177,10 +177,27 @@ def handle_sunos_routeadm(file_info,os_version)
   return fact
 end
 
+def handle_sunos_poweradm(file_info)
+  param = file_info[3]
+  fact  = Facter::Util::Resolution.exec("poweradm list |grep '#{param}' |awk '{print $2}' |cut -f2 -d=")
+  return fact
+end
+
+def handle_sunos_power(kernel,modname,type,file_info,os_version)
+  if os_version == "5.11"
+    fact = get_param_value(kernel,modname,type,file_info)
+  else
+    fact = handle_sunos_poweradm(file_info)
+  end
+  return fact
+end
+
 def handle_sunos(kernel,modname,type,file_info,fact,os_version)
   case type
   when /cron$|login|sys-suspend|passwd|system|^audit/
     fact = get_param_value(kernel,modname,type,file_info)
+  when /power/
+    fact = handle_sunos_power(kernel,modname,type,file_info,os_version)
   when /xresourcesfiles|xsysresourcesfiles/
     fact = handle_sunos_resourcefiles(type,file_info)
   when "coreadm"
@@ -205,7 +222,7 @@ end
 
 def handle_freebsd(kernel,modname,type,file_info,fact)
   case type
-  when /login|rc|sysctl/
+  when /login|rc|sysct|rcconf|rc.confl/
     fact = get_param_value(kernel,modname,type,file_info)
   end
   return fact
@@ -597,6 +614,8 @@ def handle_configfile(kernel,type,file_info)
     file = "/etc/hosts.deny"
   when /sendmailcf/
     file = "/etc/mail/sendmail.cf"
+  when /^rc$|rcconf|rc.conf/
+    file = "/etc/rc.conf"
   else
     file = ""
   end
@@ -627,7 +646,6 @@ end
 # Handle services type
 
 def handle_services(kernel,type,os_distro)
-  fact = ""
   if type == "rctcpservices"
     if kernel == "AIX"
       fact = %x[cat /etc/rc.tcpip |grep -v '^#' |awk '{print $2}']
@@ -1358,7 +1376,7 @@ if file_name !~ /template|operatingsystemupdate/
         when "exists"
           fact = handle_exists(file_info)
         when /services/
-          fact = handle_services(kernel,type)
+          fact = handle_services(kernel,type,os_distro)
         when /duplicate/
           fact = handle_duplicate(type,file_info)
         when /configfile/

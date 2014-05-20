@@ -131,3 +131,5 @@
 # Added userlist type and fixed consoleservices
 # 0.6.7: Tue 20 May 2014 13:43:50 EST
 # Added systemprofiler type
+# 0.6.8: Tue 20 May 2014 15:37:55 EST
+# Added power type
