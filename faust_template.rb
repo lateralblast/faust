@@ -264,6 +264,13 @@ end
 
 # OS X specific facts
 
+def handle_darwin_systemprofiler(file_info)
+  pfile = file_info[3]
+  param = file_info[4..-1].gsub(/_/," ")
+  fact  = Facter::Util::Resolution.exec("system_profiler #{pfile} |grep '#{param}' |awk -F ': ' '{print $2}'")
+  return fact
+end
+
 def handle_darwin_managednode()
   fact = Facter::Util::Resolution.exec("pwpolicy -n -getglobalpolicy 2>&1")
   if fact =~ /Error/
@@ -305,6 +312,8 @@ end
 
 def handle_darwin(kernel,modname,type,subtype,file_info,fact)
   case type
+  when "systemprofiler"
+    fact = handle_darwin_systemprofiler(file_info)
   when "hostconfig"
     fact = get_param_value(kernel,modname,type,file_info)
   when "managednode"
