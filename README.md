@@ -111,7 +111,7 @@ It will then appear in the facter output:
 faust_darwin_defaults_com.apple.alf_globalstate => 0
 ```
 
-# [Examples](/faust/faust.wiki/2.-Examples.md) #
+# [Examples](https://github.com/richardatlateralblast/faust/wiki/2.-Examples) #
 
 # [Types](3.-Types) #
 
