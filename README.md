@@ -13,7 +13,7 @@
 Faust Introduction
 ==================
 
-faust = Facter Automatic Unix Symbolic Template
+## faust = Facter Automatic Unix Symbolic Template ##
 
 Faust is designed to provide an easier and quicker way to create custom
 facts for facter. It's creation was driven out of the frustration of having
