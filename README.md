@@ -113,31 +113,31 @@ faust_darwin_defaults_com.apple.alf_globalstate => 0
 
 # [Examples](https://github.com/richardatlateralblast/faust/wiki/2.-Examples) #
 
-# [Types](3.-Types) #
+# [Types](https://github.com/richardatlateralblast/faust/wiki/3.-Types) #
 
-## [Platforms](3.1.-Platforms) ##
+## [Platforms](https://github.com/richardatlateralblast/faust/wiki/3.1.-Platforms) ##
 
-- [AIX](3.1.1.-AIX)
-- [OSX](3.1.2.-OSX)
-- [Solaris](3.1.3.-Solaris)
-- [Linux](3.1.4.-Linux)
+- [AIX](https://github.com/richardatlateralblast/faust/wiki/3.1.1.-AIX)
+- [OSX](https://github.com/richardatlateralblast/faust/wiki/3.1.2.-OSX)
+- [Solaris](https://github.com/richardatlateralblast/faust/wiki/3.1.3.-Solaris)
+- [Linux](https://github.com/richardatlateralblast/faust/wiki/3.1.4.-Linux)
 
-## [Services](3.2.-Services) ##
+## [Services](https://github.com/richardatlateralblast/faust/wiki/3.2.-Services) ##
 
-- [Printing](3.2.1.-Printing)
-- [SNMP and Syslog](3.2.2.-SNMP-And-Syslog)
-- [SSH](3.2.3.-SSH)
-- [DNS](3.2.4.-DNS)
-- [Apache](3.2.5.-Apache)
-- [Mail](3.2.6.-Mail)
+- [Printing](https://github.com/richardatlateralblast/faust/wiki/3.2.1.-Printing)
+- [SNMP and Syslog](https://github.com/richardatlateralblast/faust/wiki/3.2.2.-SNMP-And-Syslog)
+- [SSH](https://github.com/richardatlateralblast/faust/wiki/3.2.3.-SSH)
+- [DNS](3https://github.com/richardatlateralblast/faust/wiki/.2.4.-DNS)
+- [Apache](https://github.com/richardatlateralblast/faust/wiki/3.2.5.-Apache)
+- [Mail](https://github.com/richardatlateralblast/faust/wiki/3.2.6.-Mail)
 
-## [Operating System Configuration](3.3.-Operating-System-Configuration) ##
+## [Operating System Configuration](https://github.com/richardatlateralblast/faust/wiki/3.3.-Operating-System-Configuration) ##
 
-- [Packages](3.3.1.-Packages)
-- [Password and Privileges](3.3.2.-Password-And-Privileges)
-- [User and Groups](3.3.3.-User-And-Group)
-- [Authentication](3.3.4.-Authentication)
-- [Cron and At](3.3.5.-Cron-And-At)
-- [File and Directory](3.3.6.-File-And-Directory)
+- [Packages](https://github.com/richardatlateralblast/faust/wiki/3.3.1.-Packages)
+- [Password and Privileges](https://github.com/richardatlateralblast/faust/wiki/3.3.2.-Password-And-Privileges)
+- [User and Groups](https://github.com/richardatlateralblast/faust/wiki/3.3.3.-User-And-Group)
+- [Authentication](https://github.com/richardatlateralblast/faust/wiki/3.3.4.-Authentication)
+- [Cron and At](https://github.com/richardatlateralblast/faust/wiki/3.3.5.-Cron-And-At)
+- [File and Directory](https://github.com/richardatlateralblast/faust/wiki/3.3.6.-File-And-Directory)
 
-# [Challenges](4.-Challenges) #
+# [Challenges](https://github.com/richardatlateralblast/faust/wiki/4.-Challenges) #
