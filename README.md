@@ -111,23 +111,33 @@ It will then appear in the facter output:
 faust_darwin_defaults_com.apple.alf_globalstate => 0
 ```
 
-Challenges
-==========
+# [Examples](2.-Examples) #
 
-Some challenges with using a symbolic link approach:
+# [Types](3.-Types) #
 
-https://github.com/richardatlateralblast/faust/wiki/Challenges
+## [Platforms](3.1.-Platforms) ##
 
-Types
-=====
+- [AIX](3.1.1.-AIX)
+- [OSX](3.1.2.-OSX)
+- [Solaris](3.1.3.-Solaris)
+- [Linux](3.1.4.-Linux)
 
-Types provided by faust with some examples:
+## [Services](3.2.-Services) ##
 
-https://github.com/richardatlateralblast/faust/wiki/Types
+- [Printing](3.2.1.-Printing)
+- [SNMP and Syslog](3.2.2.-SNMP-And-Syslog)
+- [SSH](3.2.3.-SSH)
+- [DNS](3.2.4.-DNS)
+- [Apache](3.2.5.-Apache)
+- [Mail](3.2.6.-Mail)
 
-Examples
-========
+## [Operating System Configuration](3.3.-Operating-System-Configuration) ##
 
-Some more detailed examples:
+- [Packages](3.3.1.-Packages)
+- [Password and Privileges](3.3.2.-Password-And-Privileges)
+- [User and Groups](3.3.3.-User-And-Group)
+- [Authentication](3.3.4.-Authentication)
+- [Cron and At](3.3.5.-Cron-And-At)
+- [File and Directory](3.3.6.-File-And-Directory)
 
-https://github.com/richardatlateralblast/faust/wiki/Examples
+# [Challenges](4.-Challenges) #

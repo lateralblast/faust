@@ -267,6 +267,11 @@ def handle_linux_audit(file_info)
   return fact
 end
 
+def handle_linux_authconfig(file_info)
+  fact = Facter::Util::Resolution.exec("/sbin/authconfig --test |grep '#{param}'")
+  return fact
+end
+
 def handle_linux(kernel,modname,type,file_info,os_distro,fact)
   case type
   when /avahi|yum|sysctl/
