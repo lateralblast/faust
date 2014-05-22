@@ -1265,6 +1265,14 @@ def handle_userlist()
   return fact
 end
 
+# Handle emptypasswordfields
+
+def handle_emptypasswordfields()
+  fact = %x[cat /etc/shadow |awk -F":" '{print $1":"$2":"}' |grep '::$' |cut -f1 -d:]
+  fact = fact.gsub(/\n/,"")
+  return fact
+end
+
 # Main code
 
 if file_name !~ /template|operatingsystemupdate/
@@ -1326,6 +1334,8 @@ if file_name !~ /template|operatingsystemupdate/
         case type
         when /env$/
           fact = handle_env(type,file_info)
+        when "emptypasswordfields"
+          fact = handle_emptypasswordfields()
         when "userlist"
           fact = handle_userlist()
         when "reserveduids"
