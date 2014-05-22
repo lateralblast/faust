@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.6.9
+# Version:      0.7.1
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -235,7 +235,7 @@ def get_config_file(kernel,modname,type)
   file = modname+"_"+kernel.downcase+"_"+file_name
   file = Facter.value(file)
   if file !~ /[A-z]/
-    file = handle_configfile(kernel,type,file_type)
+    file = handle_configfile(kernel,type,file_info)
   end
   return file
 end
@@ -608,7 +608,7 @@ def handle_configfile(kernel,type,file_info,os_distro)
   when /^audit|^exec/
     file = "/etc/security/"+prefix.gsub(/class/,"_class")
   when /login/
-    if kernel = "SunOS"
+    if kernel == "SunOS"
       file = "/etc/default/#{pefix}"
     else
       file = "/etc/default/#{pefix}.defs"
@@ -1405,7 +1405,7 @@ if file_name !~ /template|operatingsystemupdate/
         when /duplicate/
           fact = handle_duplicate(type,file_info)
         when /configfile/
-          fact = handle_configfile(kernel,type,file_info,os_distron)
+          fact = handle_configfile(kernel,type,file_info,os_distro)
         when /crontabfile/
           fact = handle_crontabfile(kernel,type,file_info)
         when "pam"
