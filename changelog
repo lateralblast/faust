@@ -137,3 +137,5 @@
 # Added mail and postfix types
 # 0.7.0: Thu 22 May 2014 11:31:28 EST
 # Added emptypasswordfields types
+# 0.7.1: Thu 22 May 2014 13:14:33 EST
+# Added support for login type for Linux

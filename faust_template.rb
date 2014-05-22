@@ -607,6 +607,12 @@ def handle_configfile(kernel,type,file_info,os_distro)
   case prefix
   when /^audit|^exec/
     file = "/etc/security/"+prefix.gsub(/class/,"_class")
+  when /login/
+    if kernel = "SunOS"
+      file = "/etc/default/#{pefix}"
+    else
+      file = "/etc/default/#{pefix}.defs"
+    end
   when /cron|sys-suspend|passwd/
     file = "/etc/default/#{prefix}"
   when /system/
