@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.7.1
+# Version:      0.7.2
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -56,8 +56,8 @@ end
 
 # Get the value of a parameter from a file
 
-def get_param_value(kernel,modname,type,file_info)
-  file = get_config_file(kernel,modname,type)
+def get_param_value(kernel,modname,type,file_info,os_distro,os_version)
+  file = get_config_file(kernel,modname,type,os_distro,os_version)
   if File.exists?(file)
     if type =~ /hostsallow|hostsdeny|snmp|sendmailcf|ntp/
       param = file_info[3..-1].join(" ")
@@ -230,20 +230,20 @@ end
 
 # Get conig file
 
-def get_config_file(kernel,modname,type)
+def get_config_file(kernel,modname,type,os_distro,os_version)
   file_name   = type+"configfile"
   file = modname+"_"+kernel.downcase+"_"+file_name
   file = Facter.value(file)
   if file !~ /[A-z]/
-    file = handle_configfile(kernel,type,file_info)
+    file = handle_configfile(kernel,type,file_info,os_distro,os_version)
   end
   return file
 end
 
 # Linux specific facts
 
-def handle_prelink_status(kernel,modname,type)
-  file = get_config_file(kernel,modname,type)
+def handle_prelink_status(kernel,modname,type,os_distro,os_version)
+  file = get_config_file(kernel,modname,type,os_distro,os_version)
   if File.exists?(file_name)
     fact = Facter::Util::Resolution.exec("cat #{file} |grep PRELINKING |cut -f2 -d= |sed 's/ //g'")
   end
@@ -272,12 +272,12 @@ def handle_linux_authconfig(file_info)
   return fact
 end
 
-def handle_linux(kernel,modname,type,file_info,os_distro,fact)
+def handle_linux(kernel,modname,type,file_info,os_distro,fact,os_version)
   case type
   when /avahi|yum|sysctl/
     fact = get_param_value(kernel,modname,type,file_info)
   when "prelinkstatus"
-    fact = handle_prelink_status(kernel,modname,type)
+    fact = handle_prelink_status(kernel,modname,typ,os_distro,os_versione)
   when "audit"
     fact = handle_linux_audit(file_info)
   end
@@ -408,9 +408,9 @@ end
 
 # Handle syslog type
 
-def handle_syslog(kernel,modname,type,file_info)
+def handle_syslog(kernel,modname,type,file_info,os_distro,os_version)
   fac  = file_info[3]
-  file = get_config_file(kernel,modname,type)
+  file = get_config_file(kernel,modname,type,os_distro,os_version)
   fact = Facter::Util::Resolution.exec("cat #{file} | grep -v '^#' |grep '#{fac}'")
   return fact
 end
@@ -585,7 +585,7 @@ end
 
 # Handle configfile type
 
-def handle_configfile(kernel,type,file_info,os_distro)
+def handle_configfile(kernel,type,file_info,os_distro,os_version)
   if type !~ /configfile/
     type = file_info
   end
@@ -611,7 +611,17 @@ def handle_configfile(kernel,type,file_info,os_distro)
     if kernel == "SunOS"
       file = "/etc/default/#{pefix}"
     else
-      file = "/etc/default/#{pefix}.defs"
+      file = "/etc/#{pefix}.defs"
+    end
+  when /pam/
+    if kernel == "SunOS"
+      if os_version =~ /11/
+        file = "/etc/pam.d"+prefix.gsub(/pam/,"")
+      else
+        file = "/etc/pam.conf"
+      end
+    else
+      file = "/etc/pam.d"+prefix.gsub(/pam/,"")
     end
   when /cron|sys-suspend|passwd/
     file = "/etc/default/#{prefix}"
@@ -1140,8 +1150,8 @@ end
 
 # Handle sudo type
 
-def handle_sudo(kernel,modname,type,file_info)
-  file  = get_config_file(kernel,modname,type)
+def handle_sudo(kernel,modname,type,file_info,os_distro,os_version)
+  file  = get_config_file(kernel,modname,type,os_distro,os_version)
   param = file_info[3]
   if File.exists?(file)
     fact = Facter::Util::Resolution.exec("cat #{file} |grep #{param}")
@@ -1371,7 +1381,7 @@ if file_name !~ /template|operatingsystemupdate/
         when /xml|plist|launchctl/
           fact = handle_xml_types(type,file_info)
         when /syslog/
-          fact = handle_syslog(kernel,modname,type,file_info)
+          fact = handle_syslog(kernel,modname,type,file_info,os_distro,os_version)
         when /byothers|byeveryone/
           fact = handle_readwrite(type,file_info)
         when /directorylisting/
@@ -1379,7 +1389,7 @@ if file_name !~ /template|operatingsystemupdate/
         when "inactivewheelusers"
           fact = handle_inactivewheelusers()
         when "sudo"
-          fact = handle_sudo(kernel,modname,type,file_info)
+          fact = handle_sudo(kernel,modname,type,file_info,os_distro,os_version)
         when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|selinux$|cups$|apache$/
           fact = get_param_value(kernel,modname,type,file_info)
         when "groupexists"
@@ -1405,19 +1415,17 @@ if file_name !~ /template|operatingsystemupdate/
         when /duplicate/
           fact = handle_duplicate(type,file_info)
         when /configfile/
-          fact = handle_configfile(kernel,type,file_info,os_distro)
+          fact = handle_configfile(kernel,type,file_info,os_distro,os_version)
         when /crontabfile/
           fact = handle_crontabfile(kernel,type,file_info)
         when "pam"
           fact = handle_pam(kernel,type,file_info)
         when "file"
           fact = handle_file(kernel,modname,type,subtype,file_info)
-        when "Linux"
-          fact = handle_linux(kernel,modname,type,file_info,os_distro,fact)
         end
         case kernel
         when "Linux"
-          fact = handle_linux(kernel,modname,type,file_info,fact)
+          fact = handle_linux(kernel,modname,type,file_info,fact,os_version)
         when "AIX"
           fact = handle_aix(type,file_info,fact)
         when "SunOS"
