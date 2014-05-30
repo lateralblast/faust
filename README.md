@@ -127,7 +127,7 @@ faust_darwin_defaults_com.apple.alf_globalstate => 0
 - [Printing](https://github.com/richardatlateralblast/faust/wiki/3.2.1.-Printing)
 - [SNMP and Syslog](https://github.com/richardatlateralblast/faust/wiki/3.2.2.-SNMP-And-Syslog)
 - [SSH](https://github.com/richardatlateralblast/faust/wiki/3.2.3.-SSH)
-- [DNS](3https://github.com/richardatlateralblast/faust/wiki/3.2.4.-DNS)
+- [DNS](https://github.com/richardatlateralblast/faust/wiki/3.2.4.-DNS)
 - [Apache](https://github.com/richardatlateralblast/faust/wiki/3.2.5.-Apache)
 - [Mail](https://github.com/richardatlateralblast/faust/wiki/3.2.6.-Mail)
 
