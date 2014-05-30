@@ -141,3 +141,5 @@
 # Added support for login type for Linux
 # 0.7.2: Fri 23 May 2014 13:53:16 EST
 # Added PAM config file determination
+# 0.7.3: Fri 23 May 2014 16:18:17 EST
+# Improved PAM config handling

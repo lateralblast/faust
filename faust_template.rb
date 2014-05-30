@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.7.2
+# Version:      0.7.3
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -417,14 +417,44 @@ end
 
 # Handle pam type
 
-def handle_pam(kernel,type,file_info)
-  mod   = file_info[3]
-  param = file_info[4..-1].join("_")
-  if kernel == "SunOS"
-    fact = Facter::Util::Resolution.exec("cat /etc/pam.conf |grep '^#{mod}' |grep '#{param}'")
+def handle_pam(kernel,type,file_info,os_version)
+  service  = file_info[3]
+  facility = file_info[4]
+  control  = file_info[5]
+  modname  = file_info[6..-1].joing("_")
+  if kernel == "SunOS" and os_version !~ /11/
+    if facility and control and modname
+      fact = %x[cat /etc/pam.conf |awk '($1 == "#{service}" && $2 == "#{facility}" && $3 == "#{control}" && $4 == "#{modname}") {print}']
+    else
+      if facility and control
+        fact = %x[cat /etc/pam.conf |awk '($1 == "#{service}" && $2 == "#{facility}" && $3 == "#{control}") {print}']
+      else
+        if facility
+          fact = %x[cat /etc/pam.conf |awk '($1 == "#{service}" && $2 == "#{facility}") {print}']
+        else
+          fact = %x[cat /etc/pam.conf |awk '($1 == "#{service}") {print}']
+        end
+      end
+    end
   else
-    fact = Facter::Util::Resolution.exec("cat /etc/pam.d/#{mod}' |grep '#{param}'")
+    if File.exist?("/etc/pam.d/#{service}")
+      if facility and control and modname
+        fact = %x[cat /etc/pam.d/#{service}' | awk '($1 == "#{facility}" && $2 == "#{control}" && $3 == "#{modname}") {print}']
+      else
+        if facility and control
+          fact = %x[cat /etc/pam.d/#{service}' |awk '($1 == "#{facility}" && $2 == "#{control}") {print}']
+        else
+          if facility
+            fact = %x[cat /etc/pam.d/#{service}' |awk '($1 == "#{facility}") {print}']
+          else
+            fact = %x[cat /etc/pam.d/#{service}]
+          end
+        end
+      end
+    end
   end
+  fact = fact.gsub(/\n/,",")
+  return fact
 end
 # Handle duplicate type
 
@@ -1419,7 +1449,7 @@ if file_name !~ /template|operatingsystemupdate/
         when /crontabfile/
           fact = handle_crontabfile(kernel,type,file_info)
         when "pam"
-          fact = handle_pam(kernel,type,file_info)
+          fact = handle_pam(kernel,type,file_info,os_version)
         when "file"
           fact = handle_file(kernel,modname,type,subtype,file_info)
         end
