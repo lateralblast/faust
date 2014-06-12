@@ -1,4 +1,4 @@
-![alt tag](https://raw.githubusercontent.com/richardatlateralblast/faust/master/faust.jpg)
+![alt tag](https://raw.githubusercontent.com/lateralblast/faust/master/faust.jpg)
 
 > Have you not led this life quite long enough?
 <br>
@@ -10,10 +10,13 @@
 >
 > -- <cite>Mephistopheles<cite>
 
-Faust Introduction
-==================
+FAUST
+=====
 
-### faust = Facter Automatic Unix Symbolic Template ###
+Facter Automatic Unix Symbolic Template
+
+Introduction
+------------
 
 Faust is designed to provide an easier and quicker way to create custom
 facts for facter. It's creation was driven out of the frustration of having
@@ -70,8 +73,15 @@ ln -s faust_template.rb MODULE_all_installedpackages.rb
 The template has code for determining the installed packages on various
 platforms.
 
+License
+-------
+
+This software is licensed as CC-BA (Creative Commons By Attrbution)
+
+http://creativecommons.org/licenses/by/4.0/legalcode
+
 Example
-=======
+-------
 
 In case you haven't got the idea, here is an example:
 
@@ -111,33 +121,33 @@ It will then appear in the facter output:
 faust_darwin_defaults_com.apple.alf_globalstate => 0
 ```
 
-# [Examples](https://github.com/richardatlateralblast/faust/wiki/2.-Examples) #
+# [Examples](https://github.com/lateralblast/faust/wiki/2.-Examples) #
 
-# [Types](https://github.com/richardatlateralblast/faust/wiki/3.-Types) #
+# [Types](https://github.com/lateralblast/faust/wiki/3.-Types) #
 
-## [Platforms](https://github.com/richardatlateralblast/faust/wiki/3.1.-Platforms) ##
+## [Platforms](https://github.com/lateralblast/faust/wiki/3.1.-Platforms) ##
 
-- [AIX](https://github.com/richardatlateralblast/faust/wiki/3.1.1.-AIX)
-- [OSX](https://github.com/richardatlateralblast/faust/wiki/3.1.2.-OSX)
-- [Solaris](https://github.com/richardatlateralblast/faust/wiki/3.1.3.-Solaris)
-- [Linux](https://github.com/richardatlateralblast/faust/wiki/3.1.4.-Linux)
+- [AIX](https://github.com/lateralblast/faust/wiki/3.1.1.-AIX)
+- [OSX](https://github.com/lateralblast/faust/wiki/3.1.2.-OSX)
+- [Solaris](https://github.com/lateralblast/faust/wiki/3.1.3.-Solaris)
+- [Linux](https://github.com/lateralblast/faust/wiki/3.1.4.-Linux)
 
-## [Services](https://github.com/richardatlateralblast/faust/wiki/3.2.-Services) ##
+## [Services](https://github.com/lateralblast/faust/wiki/3.2.-Services) ##
 
-- [Printing](https://github.com/richardatlateralblast/faust/wiki/3.2.1.-Printing)
-- [SNMP and Syslog](https://github.com/richardatlateralblast/faust/wiki/3.2.2.-SNMP-And-Syslog)
-- [SSH](https://github.com/richardatlateralblast/faust/wiki/3.2.3.-SSH)
-- [DNS](https://github.com/richardatlateralblast/faust/wiki/3.2.4.-DNS)
-- [Apache](https://github.com/richardatlateralblast/faust/wiki/3.2.5.-Apache)
-- [Mail](https://github.com/richardatlateralblast/faust/wiki/3.2.6.-Mail)
+- [Printing](https://github.com/lateralblast/faust/wiki/3.2.1.-Printing)
+- [SNMP and Syslog](https://github.com/lateralblast/faust/wiki/3.2.2.-SNMP-And-Syslog)
+- [SSH](https://github.com/lateralblast/faust/wiki/3.2.3.-SSH)
+- [DNS](https://github.com/lateralblast/faust/wiki/3.2.4.-DNS)
+- [Apache](https://github.com/lateralblast/faust/wiki/3.2.5.-Apache)
+- [Mail](https://github.com/lateralblast/faust/wiki/3.2.6.-Mail)
 
-## [Operating System Configuration](https://github.com/richardatlateralblast/faust/wiki/3.3.-Operating-System-Configuration) ##
+## [Operating System Configuration](https://github.com/lateralblast/faust/wiki/3.3.-Operating-System-Configuration) ##
 
-- [Packages](https://github.com/richardatlateralblast/faust/wiki/3.3.1.-Packages)
-- [Password and Privileges](https://github.com/richardatlateralblast/faust/wiki/3.3.2.-Password-And-Privileges)
-- [User and Groups](https://github.com/richardatlateralblast/faust/wiki/3.3.3.-User-And-Group)
-- [Authentication](https://github.com/richardatlateralblast/faust/wiki/3.3.4.-Authentication)
-- [Cron and At](https://github.com/richardatlateralblast/faust/wiki/3.3.5.-Cron-And-At)
-- [File and Directory](https://github.com/richardatlateralblast/faust/wiki/3.3.6.-File-And-Directory)
+- [Packages](https://github.com/lateralblast/faust/wiki/3.3.1.-Packages)
+- [Password and Privileges](https://github.com/lateralblast/faust/wiki/3.3.2.-Password-And-Privileges)
+- [User and Groups](https://github.com/lateralblast/faust/wiki/3.3.3.-User-And-Group)
+- [Authentication](https://github.com/lateralblast/faust/wiki/3.3.4.-Authentication)
+- [Cron and At](https://github.com/lateralblast/faust/wiki/3.3.5.-Cron-And-At)
+- [File and Directory](https://github.com/lateralblast/faust/wiki/3.3.6.-File-And-Directory)
 
-# [Challenges](https://github.com/richardatlateralblast/faust/wiki/4.-Challenges) #
+# [Challenges](https://github.com/lateralblast/faust/wiki/4.-Challenges) #

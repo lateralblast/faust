@@ -1,7 +1,8 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
 # Version:      0.7.3
 # Release:      1
-# License:      Open Source
+# License:      CC-BA (Creative Commons By Attrbution)
+#               http://creativecommons.org/licenses/by/4.0/legalcode
 # Group:        System
 # Source:       N/A
 # URL:          http://github.com/richardatlateralblast/faust
