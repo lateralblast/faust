@@ -143,3 +143,5 @@
 # Added PAM config file determination
 # 0.7.3: Fri 23 May 2014 16:18:17 EST
 # Improved PAM config handling
+# 0.7.4: Mon  7 Jul 2014 16:13:06 EST
+# Added corestorage type

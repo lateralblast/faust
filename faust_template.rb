@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.7.3
+# Version:      0.7.4
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -333,6 +333,22 @@ def handle_darwin_software_update_schedule()
   return fact
 end
 
+def handle_darwin_corestorage(modname,file_info)
+  disk  = Facter.value("#{modname}_darwin_bootdisk")
+  param = file_info[3..-1].map(&:capitalize).join(" ")
+  info  = %x[/usr/sbin/diskutil cs list |egrep "#{param}|Disk" |grep -v "\|"].split("\n")
+  count = 0
+  info.each do |line|
+    line  = line.chomp
+    if line.match(/#{disk}$/)
+      fact = info[count-1].chomp.split(/#{param}:/)[1].gsub(/ /,"")
+      return fact
+    end
+    count = count+1
+  end
+  return fact
+end
+
 def handle_darwin(kernel,modname,type,subtype,file_info,fact)
   case type
   when "systemprofiler"
@@ -351,6 +367,8 @@ def handle_darwin(kernel,modname,type,subtype,file_info,fact)
     fact = handle_darwin_pwpolicy(modname,subtype)
   when "softwareupdateschedule"
     fact = handle_darwin_software_update_schedule()
+  when "corestorage"
+    fact = handle_darwin_corestorage(modname,file_info)
   end
   return fact
 end
@@ -1320,6 +1338,17 @@ def handle_emptypasswordfields()
   return fact
 end
 
+# Get bootdisk
+
+def handle_bootdisk(kernel)
+  case kernel
+  when /Darwin/
+    fact = %x[df |grep "/$" |awk '{print $1}'].chomp
+    fact = File.basename(fact)
+  end
+  return fact
+end
+
 # Main code
 
 if file_name !~ /template|operatingsystemupdate/
@@ -1381,6 +1410,8 @@ if file_name !~ /template|operatingsystemupdate/
         case type
         when /env$/
           fact = handle_env(type,file_info)
+        when /bootdisk/
+          fact = handle_bootdisk(kernel)
         when "emptypasswordfields"
           fact = handle_emptypasswordfields()
         when "userlist"
