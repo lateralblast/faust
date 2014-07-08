@@ -145,3 +145,5 @@
 # Improved PAM config handling
 # 0.7.4: Mon  7 Jul 2014 16:13:06 EST
 # Added corestorage type
+# 0.7.5: Tue  8 Jul 2014 10:11:27 EST
+# Fixed retrieval of values from files

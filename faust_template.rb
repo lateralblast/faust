@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.7.4
+# Version:      0.7.5
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -185,8 +185,9 @@ def handle_sunos_poweradm(file_info)
 end
 
 def handle_sunos_power(kernel,modname,type,file_info,os_version)
+  os_distro = ""
   if os_version == "5.11"
-    fact = get_param_value(kernel,modname,type,file_info)
+    fact = get_param_value(kernel,modname,type,file_info,os_distro,os_version)
   else
     fact = handle_sunos_poweradm(file_info)
   end
@@ -194,9 +195,10 @@ def handle_sunos_power(kernel,modname,type,file_info,os_version)
 end
 
 def handle_sunos(kernel,modname,type,file_info,fact,os_version)
+  os_distro = ""
   case type
   when /cron$|login|sys-suspend|passwd|system|^audit/
-    fact = get_param_value(kernel,modname,type,file_info)
+    fact = get_param_value(kernel,modname,type,file_info,os_distro,os_version)
   when /power/
     fact = handle_sunos_power(kernel,modname,type,file_info,os_version)
   when /xresourcesfiles|xsysresourcesfiles/
@@ -222,9 +224,11 @@ end
 # FreeBSD specific facts
 
 def handle_freebsd(kernel,modname,type,file_info,fact)
+  os_distro  = ""
+  os_version = ""
   case type
   when /login|rc|sysct|rcconf|rc.confl/
-    fact = get_param_value(kernel,modname,type,file_info)
+    fact = get_param_value(kernel,modname,type,file_info,os_distro,os_version)
   end
   return fact
 end
@@ -276,7 +280,7 @@ end
 def handle_linux(kernel,modname,type,file_info,os_distro,fact,os_version)
   case type
   when /avahi|yum|sysctl/
-    fact = get_param_value(kernel,modname,type,file_info)
+    fact = get_param_value(kernel,modname,type,file_info,os_distro,os_version)
   when "prelinkstatus"
     fact = handle_prelink_status(kernel,modname,typ,os_distro,os_versione)
   when "audit"
@@ -350,11 +354,13 @@ def handle_darwin_corestorage(modname,file_info)
 end
 
 def handle_darwin(kernel,modname,type,subtype,file_info,fact)
+  os_distro  = ""
+  os_version = ""
   case type
   when "systemprofiler"
     fact = handle_darwin_systemprofiler(file_info)
   when "hostconfig"
-    fact = get_param_value(kernel,modname,type,file_info)
+    fact = get_param_value(kernel,modname,type,file_info,os_distro,os_version)
   when "managednode"
     fact = handle_darwin_managednode()
   when "pmset"
@@ -1158,7 +1164,7 @@ end
 
 # Handle readable files types
 
-def handle_readablefiles(type)
+def handle_readablefiles(type,kernel)
   fact = []
   if type != "readabledotfiles"
     file_name = type.gsub(/files/,"")
@@ -1170,6 +1176,14 @@ def handle_readablefiles(type)
     file_name = "."+file_name
     home_dirs = %x[cat /etc/passwd |cut -f6 -d":" |grep -v "^/$" |grep -v '^#' |sort |uniq]
     home_dirs = home_dirs.split(/\n/)
+    if kernel == "Darwin"
+      user_dirs = Dir.entries("/Users")
+      user_dirs.each do |user_dir|
+        if user_dir.match(/^[A-z]/)
+          home_dirs.push(user_dir)
+        end
+      end
+    end
   end
   home_dirs.each do |home_dir|
     if File.directory?(home_dir)
@@ -1193,6 +1207,8 @@ def handle_readablefiles(type)
   end
   if fact =~ /[A-z]/
     fact = fact.join(",")
+  else
+    fact = ""
   end
   return fact
 end
@@ -1429,7 +1445,7 @@ if file_name !~ /template|operatingsystemupdate/
         when /sshkeys/
           fact = handle_sshkeys(type)
         when /rhostsfiles|shostsfiles|hostsequivfiles|netrcfiles|readabledotfiles/
-          fact = handle_readablefiles(type)
+          fact = handle_readablefiles(type,kernel)
         when "symlink"
           fact = handle_symlink(file_info)
         when /cron$/
@@ -1453,7 +1469,7 @@ if file_name !~ /template|operatingsystemupdate/
         when "sudo"
           fact = handle_sudo(kernel,modname,type,file_info,os_distro,os_version)
         when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|selinux$|cups$|apache$/
-          fact = get_param_value(kernel,modname,type,file_info)
+          fact = get_param_value(kernel,modname,type,file_info,os_distro,os_version)
         when "groupexists"
           fact = handle_groupexists(file_info)
         when "sulogin"
