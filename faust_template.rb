@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.7.6
+# Version:      0.7.7
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -359,6 +359,12 @@ def handle_darwin_corestorage(modname,file_info)
   return fact
 end
 
+def handle_darwin_spctl(file_info)
+  param = file_info[3]
+  fact  = Facter::Util::Resolution.exec("/usr/bin/spctl --#{param}")
+  return fact
+end
+
 def handle_darwin(kernel,modname,type,subtype,file_info,fact)
   os_distro  = ""
   os_version = ""
@@ -383,6 +389,8 @@ def handle_darwin(kernel,modname,type,subtype,file_info,fact)
     fact = handle_darwin_corestorage(modname,file_info)
   when "security"
     fact = handle_darwin_security(file_info)
+  when "spctl"
+    fact = handle_darwin_spctl(file_info)
   end
   return fact
 end
