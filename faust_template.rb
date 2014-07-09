@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.7.5
+# Version:      0.7.6
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -291,6 +291,12 @@ end
 
 # OS X specific facts
 
+def handle_darwin_security(file_info)
+  param = file_info[3]
+  fact  = Facter::Util::Resolution.exec("/usr/bin/security #{param} |cut -f2 -d=")
+  return fact
+end
+
 def handle_darwin_systemprofiler(file_info)
   pfile = file_info[3]
   param = file_info[4..-1].gsub(/_/," ")
@@ -375,6 +381,8 @@ def handle_darwin(kernel,modname,type,subtype,file_info,fact)
     fact = handle_darwin_software_update_schedule()
   when "corestorage"
     fact = handle_darwin_corestorage(modname,file_info)
+  when "security"
+    fact = handle_darwin_security(file_info)
   end
   return fact
 end
