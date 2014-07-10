@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.7.7
+# Version:      0.7.8
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -76,7 +76,7 @@ def get_param_value(kernel,modname,type,file_info,os_distro,os_version)
         fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}'")
       when /ssh|apache/
         fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}' |grep -v '#{param}[A-z,0-9]' |awk '{print $2}'")
-      when "aliases"
+      when /aliases|event/
         fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}' |grep -v '#{param}[A-z,0-9]' |cut -f2 -d: |sed 's/ //g'")
       else
         fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}' |grep -v '#{param}[A-z,0-9]' |cut -f2 -d= |sed 's/ //g'")
@@ -194,6 +194,12 @@ def handle_sunos_power(kernel,modname,type,file_info,os_version)
   return fact
 end
 
+def handle_sunos_eeprom(file_info)
+  param = file_info[3..-1].join("-")
+  fact  = Facter::Util::Resolution.exec("eeprom |grep '#{param}' |cut -f2 -d=")
+  return fact
+end
+
 def handle_sunos(kernel,modname,type,file_info,fact,os_version)
   os_distro = ""
   case type
@@ -217,6 +223,8 @@ def handle_sunos(kernel,modname,type,file_info,fact,os_version)
     fact = handle_sunos_svc(file_info,os_version)
   when "routeadm"
     fact = handle_sunos_routeadm(file_info,os_version)
+  when "eeprom"
+    fact = handle_sunos_eeprom(file_info)
   end
   return fact
 end
@@ -236,9 +244,9 @@ end
 # Get conig file
 
 def get_config_file(kernel,modname,type,os_distro,os_version)
-  file_name   = type+"configfile"
-  file = modname+"_"+kernel.downcase+"_"+file_name
-  file = Facter.value(file)
+  file_name = type+"configfile"
+  file      = modname+"_"+kernel.downcase+"_"+file_name
+  file      = Facter.value(file)
   if file !~ /[A-z]/
     file = handle_configfile(kernel,type,file_info,os_distro,os_version)
   end
@@ -677,7 +685,12 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
   end
   case prefix
   when /^audit|^exec/
-    file = "/etc/security/"+prefix.gsub(/class/,"_class")
+    if prefix =~ /class/
+      file = "/etc/security/"+prefix.gsub(/class/,"_class")
+    end
+    if prefix =~ /event/
+      file = "/etc/security/"+prefix.gsub(/event/,"_event")
+    end
   when /login/
     if kernel == "SunOS"
       file = "/etc/default/#{pefix}"
