@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.7.8
+# Version:      0.7.9
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -200,6 +200,11 @@ def handle_sunos_eeprom(file_info)
   return fact
 end
 
+def handle_sunos_extendedattributes()
+  fact = %x[find / \( -fstype nfs -o -fstype cachefs -o -fstype autofs -o -fstype ctfs -o -fstype mntfs -o -fstype objfs -o -fstype proc \) -prune -o -xattr -print]
+  return fact
+end
+
 def handle_sunos(kernel,modname,type,file_info,fact,os_version)
   os_distro = ""
   case type
@@ -225,6 +230,8 @@ def handle_sunos(kernel,modname,type,file_info,fact,os_version)
     fact = handle_sunos_routeadm(file_info,os_version)
   when "eeprom"
     fact = handle_sunos_eeprom(file_info)
+  when "extendedattributes"
+    fact = handle_sunos_extendedattributes(file_info)
   end
   return fact
 end

@@ -152,4 +152,6 @@
 # 0.7.7: Wed  9 Jul 2014 13:40:57 EST
 # Added spctl (GateKeeper) type for OS X
 # 0.7.8: Thu 10 Jul 2014 19:33:32 EST
-# Added auditevent, auditeventconfig, and eeprom types for Solaris
+# Added auditevent, auditeventconfigfile, and eeprom types for Solaris
+# 0.7.9: Sat 12 Jul 2014 08:50:33 EST
+# Added extendedattributes type for Solaris
