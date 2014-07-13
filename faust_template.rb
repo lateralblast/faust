@@ -292,16 +292,6 @@ def handle_linux_authconfig(file_info)
   return fact
 end
 
-def handle_linux_modprobe(file_info)
-  param     = file_info[3..-1].join(" ")
-  file_name = "/etc/modprobe.conf"
-  fact      = ""
-  if File.exist?(file_name)
-    fact = Facter::Util::Resolution.exec("cat #{file_name} |grep '#{param}'")
-  end
-  return fact
-end
-
 def handle_linux(kernel,modname,type,file_info,os_distro,fact,os_version)
   case type
   when /avahi|yum|sysctl/
@@ -310,8 +300,6 @@ def handle_linux(kernel,modname,type,file_info,os_distro,fact,os_version)
     fact = handle_linux_prelink_status(kernel,modname,typ,os_distro,os_versione)
   when "audit"
     fact = handle_linux_audit(file_info)
-  when "modprobe"
-    fact = handle_linux_modprobe(file_info)
   end
   return fact
 end
@@ -732,6 +720,10 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     file = "/etc/system"
   when /^mail/
     file = "/etc/sysconfig/mail"
+  when /network/
+    file = "/etc/sysconfig/network"
+  when /modprobe/
+    file = "/etc/modprobe.conf"
   when /postfix/
     file = "/etc/postfix/main.cf"
   when /policy/
@@ -1516,7 +1508,7 @@ if file_name !~ /template|operatingsystemupdate/
           fact = handle_inactivewheelusers()
         when "sudo"
           fact = handle_sudo(kernel,modname,type,file_info,os_distro,os_version)
-        when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|selinux$|cups$|apache$/
+        when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|selinux$|cups$|apache$|modprobe|network/
           fact = get_param_value(kernel,modname,type,file_info,os_distro,os_version)
         when "groupexists"
           fact = handle_groupexists(file_info)
