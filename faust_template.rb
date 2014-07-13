@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.8.0
+# Version:      0.8.1
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -262,7 +262,7 @@ end
 
 # Linux specific facts
 
-def handle_prelink_status(kernel,modname,type,os_distro,os_version)
+def handle_linux_prelink_status(kernel,modname,type,os_distro,os_version)
   file = get_config_file(kernel,modname,type,os_distro,os_version)
   if File.exists?(file_name)
     fact = Facter::Util::Resolution.exec("cat #{file} |grep PRELINKING |cut -f2 -d= |sed 's/ //g'")
@@ -292,14 +292,26 @@ def handle_linux_authconfig(file_info)
   return fact
 end
 
+def handle_linux_modprobe(file_info)
+  param     = file_info[3..-1].join(" ")
+  file_name = "/etc/modprobe.conf"
+  fact      = ""
+  if File.exist?(file_name)
+    fact = Facter::Util::Resolution.exec("cat #{file_name} |grep '#{param}'")
+  end
+  return fact
+end
+
 def handle_linux(kernel,modname,type,file_info,os_distro,fact,os_version)
   case type
   when /avahi|yum|sysctl/
     fact = get_param_value(kernel,modname,type,file_info,os_distro,os_version)
   when "prelinkstatus"
-    fact = handle_prelink_status(kernel,modname,typ,os_distro,os_versione)
+    fact = handle_linux_prelink_status(kernel,modname,typ,os_distro,os_versione)
   when "audit"
     fact = handle_linux_audit(file_info)
+  when "modprobe"
+    fact = handle_linux_modprobe(file_info)
   end
   return fact
 end
@@ -698,7 +710,7 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     if prefix =~ /event/
       file = "/etc/security/"+prefix.gsub(/event/,"_event")
     end
-  when /login|su|power/
+  when /login|su|power|passwd/
     if kernel == "SunOS"
       file = "/etc/default/#{prefix}"
     else

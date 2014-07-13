@@ -157,3 +157,5 @@
 # Added extendedattributes type for Solaris
 # 0.8.0: Sun 13 Jul 2014 13:26:38 EST
 # Added su type for Solaris
+# 0.8.1: Mon 14 Jul 2014 09:38:22 EST
+# Added modprobe type for Linux
