@@ -155,3 +155,5 @@
 # Added auditevent, auditeventconfigfile, and eeprom types for Solaris
 # 0.7.9: Sat 12 Jul 2014 08:50:33 EST
 # Added extendedattributes type for Solaris
+# 0.8.0: Sun 13 Jul 2014 13:26:38 EST
+# Added su type for Solaris

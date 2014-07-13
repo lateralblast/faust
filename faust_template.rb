@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.7.9
+# Version:      0.8.0
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -698,9 +698,9 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     if prefix =~ /event/
       file = "/etc/security/"+prefix.gsub(/event/,"_event")
     end
-  when /login/
+  when /login|su|power/
     if kernel == "SunOS"
-      file = "/etc/default/#{pefix}"
+      file = "/etc/default/#{prefix}"
     else
       file = "/etc/#{pefix}.defs"
     end
