@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.8.1
+# Version:      0.8.3
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -251,9 +251,9 @@ end
 # Get conig file
 
 def get_config_file(kernel,modname,type,os_distro,os_version)
-  file_name = type+"configfile"
-  file      = modname+"_"+kernel.downcase+"_"+file_name
-  file      = Facter.value(file)
+  file = type+"configfile"
+  file = modname+"_"+kernel.downcase+"_"+file
+  file = Facter.value(file)
   if file !~ /[A-z]/
     file = handle_configfile(kernel,type,file_info,os_distro,os_version)
   end
@@ -264,24 +264,24 @@ end
 
 def handle_linux_prelink_status(kernel,modname,type,os_distro,os_version)
   file = get_config_file(kernel,modname,type,os_distro,os_version)
-  if File.exists?(file_name)
+  if File.exists?(file)
     fact = Facter::Util::Resolution.exec("cat #{file} |grep PRELINKING |cut -f2 -d= |sed 's/ //g'")
   end
   return fact
 end
 
 def handle_linux_audit(file_info)
-  file_name = file_info.join("_")
-  if file_name =~ /_etc_|_var_|_run_|_sbin_/
+  file = file_info.join("_")
+  if file =~ /_etc_|_var_|_run_|_sbin_/
     param = file_info[3..-1].join("/")
   else
-    if file_name =~ /_log_/
+    if file =~ /_log_/
       param = file_info[3..-1].join("_")
     else
       param = file_info[3..-1].join(" ")
     end
   end
-  if File.exists?(file_name)
+  if File.exists?(file)
     fact = Facter::Util::Resolution.exec("cat /etc/audit/audit.rules |grep ' #{param} '")
   end
   return fact
@@ -1138,10 +1138,10 @@ end
 
 def handle_cron(kernel,type)
   if type =~ /allow|deny/
-    file_name = file_name.gsub(/cron/,"")
-    file_name = "/etc/cron"+file_name
-    if File.exists?(file_name)
-      fact = %x[cat #{file_name}]
+    file = type.gsub(/cron/,"")
+    file = "/etc/cron"+file
+    if File.exists?(file)
+      fact = %x[cat #{file}]
       fact = fact.split("\n").join(",")
     end
   end
@@ -1394,6 +1394,17 @@ def handle_emptypasswordfields()
   return fact
 end
 
+# Handle issue
+
+def handle_issue()
+  fact = ""
+  file = "/etc/issue"
+  if File.exist?(file)
+    fact = %x[cat #{file}]
+  end
+  return fact
+end
+
 # Get bootdisk
 
 def handle_bootdisk(kernel)
@@ -1464,6 +1475,8 @@ if file_name !~ /template|operatingsystemupdate/
           end
         end
         case type
+        when "issue"
+          fact = handle_issue()
         when /env$/
           fact = handle_env(type,file_info)
         when /bootdisk/

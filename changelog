@@ -161,3 +161,5 @@
 # Added modprobe type for Linux
 # 0.8.2: Mon 14 Jul 2014 09:57:59 EST
 # Added network type for Linux
+# 0.8.3: Mon 14 Jul 2014 16:19:21 EST
+# Added issue type
