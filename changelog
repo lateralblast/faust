@@ -163,3 +163,5 @@
 # Added network type for Linux
 # 0.8.3: Mon 14 Jul 2014 16:19:21 EST
 # Added issue type
+# 0.8.4: Tue 15 Jul 2014 11:39:18 EST
+# Added XscreenSaver type

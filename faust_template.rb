@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.8.3
+# Version:      0.8.4
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -736,6 +736,10 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     file = "/etc/mail/sendmail.cf"
   when /^rc$|rcconf|rc.conf/
     file = "/etc/rc.conf"
+  when /xscreensaver|XScreenSaver/
+    if kernel = "SunOS"
+      file = "/usr/openwin/lib/app-defaults/XScreenSaver"
+    end
   else
     file = ""
   end
@@ -1416,6 +1420,19 @@ def handle_bootdisk(kernel)
   return fact
 end
 
+# Get skel information
+
+def handle_skel(file_info)
+  fact  = ""
+  file  = file_info[3..-2].join("_")
+  file  = "/etc/skell/"+file
+  param = file_info[-1]
+  if File.exist?(file)
+    fact = Facter::Util::Resolution.exec("cat #{file} |grep '#{param}'")
+  end
+  return fact
+end
+
 # Main code
 
 if file_name !~ /template|operatingsystemupdate/
@@ -1475,6 +1492,8 @@ if file_name !~ /template|operatingsystemupdate/
           end
         end
         case type
+        when "skel"
+          fact = handle_skel(file_info)
         when "issue"
           fact = handle_issue()
         when /env$/
@@ -1521,7 +1540,7 @@ if file_name !~ /template|operatingsystemupdate/
           fact = handle_inactivewheelusers()
         when "sudo"
           fact = handle_sudo(kernel,modname,type,file_info,os_distro,os_version)
-        when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|selinux$|cups$|apache$|modprobe|network/
+        when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|selinux$|cups$|apache$|modprobe|network|xscreensaver/
           fact = get_param_value(kernel,modname,type,file_info,os_distro,os_version)
         when "groupexists"
           fact = handle_groupexists(file_info)
