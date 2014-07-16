@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.8.4
+# Version:      0.8.5
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -25,12 +25,12 @@
 #
 # List the enabled services on Linux:
 #
-# ln -s faust_template.rb faust_linux_services.rb
+# ln -s faust.rb faust_linux_services.rb
 #
 # To check the value of a parameter in a file, eg TIMESYNC in
 # /private/etc/hostprofile on OS X:
 #
-# ln -s faust_template.rb faust_darwin_file_private_etc_host_config_parameter_TIMESYNC.rb
+# ln -s faust.rb faust_darwin_file_private_etc_host_config_parameter_TIMESYNC.rb
 #
 # Refer to http://github.com/richardatlateralblast/faust
 
@@ -737,7 +737,7 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
   when /^rc$|rcconf|rc.conf/
     file = "/etc/rc.conf"
   when /xscreensaver|XScreenSaver/
-    if kernel = "SunOS"
+    if kernel == "SunOS"
       file = "/usr/openwin/lib/app-defaults/XScreenSaver"
     end
   else

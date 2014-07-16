@@ -67,7 +67,7 @@ name by the template.
 For example to create a custom fact that lists all installed packages:
 
 ```
-ln -s faust_template.rb MODULE_all_installedpackages.rb
+ln -s faust.rb MODULE_all_installedpackages.rb
 ```
 
 The template has code for determining the installed packages on various
@@ -112,7 +112,7 @@ system parameters this gets tedious.
 Using the template a custom fact can be created by simply creating a symbolic link:
 
 ```
-ln -s faust_template.rb faust_darwin_defaults_com.apple.alf_globalstate.rb
+ln -s faust.rb faust_darwin_defaults_com.apple.alf_globalstate.rb
 ```
 
 It will then appear in the facter output:
