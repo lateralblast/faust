@@ -167,3 +167,11 @@
 # Added XscreenSaver type
 # 0.8.5: Thu 17 Jul 2014 08:30:03 EST
 # Dispensed with _template
+# 0.8.6: Thu 17 Jul 2014 15:06:07 EST
+# Bug fixes
+# 0.8.7: Thu 17 Jul 2014 15:17:34 EST
+# Migrated File.exists? to File.exist?
+# 0.8.9: Thu 17 Jul 2014 15:41:02 EST
+# More bug fixes
+# 0.9.0: Fri 18 Jul 2014 06:19:39 EST
+# Improved ssh type
