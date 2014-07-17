@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.9.0
+# Version:      0.9.1
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -64,32 +64,36 @@ end
 
 def get_param_value(kernel,modname,type,file_info,os_distro,os_version)
   file = get_config_file(kernel,modname,type,file_info,os_distro,os_version)
-  if File.exist?(file)
-    if type =~ /hostsallow|hostsdeny|snmp|sendmailcf|ntp/
-      param = file_info[3..-1].join(" ")
-      if type =~ /hostsallow|hostsdeny/
-        fact = %x[cat #{file} |grep -v '#' |grep '#{param}']
-        fact = fact.gsub(/\n/,",")
-      else
+  if file
+    if File.exist?(file) or File.symlink?(file)
+      if type =~ /hostsallow|hostsdeny|snmp|sendmailcf|ntp/
         param = file_info[3..-1].join(" ")
-        fact  = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}'")
-      end
-    else
-      param = file_info[3..-1].join("_")
-      case type
-      when "pam"
-        fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}'")
-      when /ssh|apache/
-        fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}' |grep -v '#{param}[A-z,0-9]' |awk '{print $2}'")
-        if type == "ssh"
-          if fact !~ /[A-z]|[0-9]/
-            fact = Facter::Util::Resolution.exec("cat #{file} |grep '#{param}' |grep -v '#{param}[A-z,0-9]' |awk '{print $2}'")
+        if type =~ /hostsallow|hostsdeny/
+          fact = %x[cat #{file} |grep -v '#' |grep '#{param}']
+          if fact
+            fact = fact.gsub(/\n/,",")
           end
+        else
+          param = file_info[3..-1].join(" ")
+          fact  = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}'")
         end
-      when /aliases|event/
-        fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}' |grep -v '#{param}[A-z,0-9]' |cut -f2 -d: |sed 's/ //g'")
       else
-        fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}' |grep -v '#{param}[A-z,0-9]' |cut -f2 -d= |sed 's/ //g'")
+        param = file_info[3..-1].join("_")
+        case type
+        when "pam"
+          fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}'")
+        when /ssh|apache/
+          fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}' |grep -v '#{param}[A-z,0-9]' |awk '{print $2}'")
+          if type == "ssh"
+            if fact !~ /[A-z]|[0-9]/
+              fact = Facter::Util::Resolution.exec("cat #{file} |grep '#{param}' |grep -v '#{param}[A-z,0-9]' |awk '{print $2}'")
+            end
+          end
+        when /aliases|event/
+          fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}' |grep -v '#{param}[A-z,0-9]' |cut -f2 -d: |sed 's/ //g'")
+        else
+         fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}' |grep -v '#{param}[A-z,0-9]' |cut -f2 -d= |sed 's/ //g'")
+        end
       end
     end
   end
@@ -107,7 +111,9 @@ def handle_sunos_resourcefiles(type,file_info)
     if type == "xsysresourcefiles"
       fact = %x[find #{dir_name} -name sys.resources]
     end
-    fact = fact.gsub(/\n/,",")
+    if fact
+      fact = fact.gsub(/\n/,",")
+    end
   end
   return fact
 end
@@ -521,7 +527,9 @@ def handle_pam(kernel,type,file_info,os_version)
       end
     end
   end
-  fact = fact.gsub(/\n/,",")
+  if fact
+    fact = fact.gsub(/\n/,",")
+  end
   return fact
 end
 # Handle duplicate type
@@ -540,9 +548,13 @@ def handle_duplicate(type,file_info)
     list = %x[cat /etc/passwd |cut -f1 -d':']
   end
   list = list.split("\n")
-  fact = list.select{|element| list.count(element) > 1}
-  fact = fact.uniq
-  fact = fact.join(",")
+  if list
+    fact = list.select{|element| list.count(element) > 1}
+    if fact
+      fact = fact.uniq
+      fact = fact.join(",")
+    end
+  end
   return fact
 end
 
@@ -677,16 +689,15 @@ def handle_unownedfiles(kernel,type,file_info)
     find_command = "find / \( -nouser -o -nogroup \) -print"
   end
   fact = %x[#{find_command}]
-  fact = fact.gsub(/\n/,",")
+  if fact
+    fact = fact.gsub(/\n/,",")
+  end
   return fact
 end
 
 # Handle configfile type
 
 def handle_configfile(kernel,type,file_info,os_distro,os_version)
-  if type !~ /configfile/
-    type = file_info
-  end
   if kernel =~ /Darwin|FreeBSD/
     if type =~ /syslog/
       prefix = "newsyslog"
@@ -714,7 +725,7 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     if kernel == "SunOS"
       file = "/etc/default/#{prefix}"
     else
-      file = "/etc/#{pefix}.defs"
+      file = "/etc/#{prefix}.defs"
     end
   when /pam/
     if kernel == "SunOS"
@@ -865,7 +876,9 @@ def handle_services(kernel,type,os_distro)
       fact = %x[cat /etc/inittab |grep -v '^#' |grep getty |egrep 'ttya|ttyb']
     end
   end
-  fact = fact.gsub(/\n/,",")
+  if fact
+    fact = fact.gsub(/\n/,",")
+  end
   return fact
 end
 
@@ -899,7 +912,9 @@ def handle_installedpackages(kernel,os_distro)
   if kernel == "AIX"
     fact = %x[lslpp -L |awk '{print $1}']
   end
-  fact = fact.gsub(/\n/,",")
+  if fact
+    fact = fact.gsub(/\n/,",")
+  end
   return fact
 end
 
@@ -948,7 +963,9 @@ def handle_mtime(file_info)
   fs_item = "/"+fs_item.join("/")
   if File.exist?(fs_item)
     fact = (Time.now - File.stat(fs_item).mtime).to_i / 86400.0
-    fact = fact.to_i.to_s
+    if fact
+      fact = fact.to_i.to_s
+    end
   end
   return fact
 end
@@ -973,8 +990,10 @@ def handle_readwrite(type,file_info)
       end
     end
   end
-  fact = fact.split("\n")
-  fact = fact.join(",")
+  if fact
+    fact = fact.split("\n")
+    fact = fact.join(",")
+  end
   return fact
 end
 
@@ -1000,7 +1019,9 @@ def handle_worldwritable(kernel)
       -a ! -perm -1000 \) -print"
   end
   fact = %x[#{find_command}]
-  fact = fact.gsub(/\n/,",")
+  if fact
+    fact = fact.gsub(/\n/,",")
+  end
   return fact
 end
 
@@ -1015,8 +1036,10 @@ def handle_directorylisting(type,file_info)
     else
       fact = %x[fine #{dir_name} -maxdepth 1 -type f]
     end
-    fact = fact.split("\n")
-    fact = fact.join(",")
+    if fact
+      fact = fact.split("\n")
+      fact = fact.join(",")
+    end
   end
   return fact
 end
@@ -1056,7 +1079,9 @@ def handle_xml_types(type,file_info)
           fact.push(element.text)
         end
       end
-      fact = fact.join(",")
+      if fact
+        fact = fact.join(",")
+      end
     end
   end
   return fact
@@ -1081,7 +1106,9 @@ def handle_inactivewheelusers(kernel)
         end
       end
     end
-    fact = fact.join(",")
+    if fact
+      fact = fact.join(",")
+    end
   end
   return fact
 end
@@ -1169,7 +1196,9 @@ def handle_nis(kernel,type)
     if type =~ /password/
       fact = %x[cat /etc/passwd |grep '^+']
     end
-    fact = fact.gsub("\n",/,/)
+    if fact
+      fact = fact.gsub("\n",/,/)
+    end
   end
   return fact
 end
@@ -1182,7 +1211,9 @@ def handle_cron(kernel,type)
     file = "/etc/cron"+file
     if File.exist?(file)
       fact = %x[cat #{file}]
-      fact = fact.split("\n").join(",")
+      if fact
+        fact = fact.split("\n").join(",")
+      end
     end
   end
   if type =~ /users/
@@ -1216,7 +1247,9 @@ def handle_suidfiles(kernel)
     | xargs -I '{}' find '{}' -xdev -type f -perm -4000 -o -perm -2000 -print"
   end
   fact = %x[#{find_command}]
-  fact = fact.gsub(/\n/,",")
+  if fact
+    fact = fact.gsub(/\n/,",")
+  end
   return fact
 end
 
@@ -1238,14 +1271,15 @@ def handle_stickybitfiles(kernel)
     | xargs -I '{}' find '{}' -xdev -type f -perm -0002 -o -perm -1000 -print"
   end
   fact = %x[#{find_command}]
-  fact = fact.gsub(/\n/,",")
+  if fact
+    fact = fact.gsub(/\n/,",")
+  end
   return fact
 end
 
 # Handle readable files types
 
 def handle_readablefiles(type,kernel)
-  fact = []
   if type != "readabledotfiles"
     file_name = type.gsub(/files/,"")
   end
@@ -1265,28 +1299,33 @@ def handle_readablefiles(type,kernel)
       end
     end
   end
-  home_dirs.each do |home_dir|
-    if File.directory?(home_dir)
-      if type == "readabledotfiles"
-        files_list = %x[sudo find #{home_dir} -name .\[A-z,0-9\]* -maxdepth 1 -type f -perm +066]
-        if files_list =~ /[a-z]/
-          files_list = files_list.split(/\n/)
-          files_list.each do |check_file|
-            if File.exist?(check_file)
-              fact.push(check_file)
+  if home_dirs
+    home_dirs.each do |home_dir|
+      fact = []
+      if File.directory?(home_dir)
+        if type == "readabledotfiles"
+          files_list = %x[sudo find #{home_dir} -name .\[A-z,0-9\]* -maxdepth 1 -type f -perm +066]
+          if files_list =~ /[a-z]/
+            files_list = files_list.split(/\n/)
+            files_list.each do |check_file|
+              if File.exist?(check_file)
+                fact.push(check_file)
+              end
             end
           end
-        end
-      else
-        check_file = home_dir+"/"+file_name
-        if File.exist?(check_file)
-          fact.push(check_file)
+        else
+          check_file = home_dir+"/"+file_name
+          if File.exist?(check_file)
+            fact.push(check_file)
+          end
         end
       end
     end
   end
-  if fact =~ /[A-z]/
-    fact = fact.join(",")
+  if fact
+    if fact =~ /[A-z]/
+      fact = fact.join(",")
+    end
   end
   return fact
 end
@@ -1296,8 +1335,10 @@ end
 def handle_sudo(kernel,modname,type,file_info,os_distro,os_version)
   file  = get_config_file(kernel,modname,type,file_info,os_distro,os_version)
   param = file_info[3]
-  if File.exist?(file)
-    fact = Facter::Util::Resolution.exec("cat #{file} |grep #{param}")
+  if file
+    if File.exist?(file)
+      fact = Facter::Util::Resolution.exec("cat #{file} |grep #{param}")
+    end
   end
   return fact
 end
@@ -1348,7 +1389,9 @@ def handle_sshkeys(kernel,type)
       fact     = fact.push(ssh_keys)
     end
   end
-  fact = fact.join("\n")
+  if fact
+    fact = fact.join("\n")
+  end
   return fact
 end
 
@@ -1365,7 +1408,9 @@ def handle_sshkeyfiles(kernel,type)
   if File.directory?(ssh_dir)
     fact = %x[find #{ssh_dir} -name "authorized_keys*"]
   end
-  fact = fact.gsub(/\n/,",")
+  if fact
+    fact = fact.gsub(/\n/,",")
+  end
   return fact
 end
 
@@ -1413,7 +1458,9 @@ end
 
 def handle_reserveduids()
   fact = %x[cat /etc/passwd | awk -F: '($3 < 100) { print $1 }']
-  fact = fact.gsub(/\n/,"")
+  if fact
+    fact = fact.gsub(/\n/,"")
+  end
   return fact
 end
 
@@ -1421,7 +1468,9 @@ end
 
 def handle_userlist()
   fact = %x[cat /etc/passwd |cut -f1 -d:]
-  fact = fact.gsub(/\n/,"")
+  if fact
+    fact = fact.gsub(/\n/,"")
+  end
   return fact
 end
 
@@ -1433,7 +1482,9 @@ end
 def handle_emptypasswordfields(kernel)
   if kernel != "Darwin"
     fact = %x[cat /etc/shadow |awk -F":" '{print $1":"$2":"}' |grep '::$' |cut -f1 -d:]
-    fact = fact.gsub(/\n/,"")
+    if fact
+      fact = fact.gsub(/\n/,"")
+    end
   end
   return fact
 end
@@ -1569,7 +1620,7 @@ if file_name !~ /template|operatingsystemupdate/
           fact = handle_groupmembers(type)
         when /xml|plist|launchctl/
           fact = handle_xml_types(type,file_info)
-        when /syslog/
+        when /syslog$/
           fact = handle_syslog(kernel,modname,type,file_info,os_distro,os_version)
         when /byothers|byeveryone/
           fact = handle_readwrite(type,file_info)
