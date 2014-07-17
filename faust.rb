@@ -12,14 +12,17 @@
 # Packager:     Richard Spindler <richard@lateralblast.com.au>
 # Description:  A template to quickly create custom facts via symlinks
 
-# This fact will is based on a template
+# This template will create a custom fact based on whatever file is symlinked
+# to it.
 #
-# For example:
+# The file naming follows the standard below:
 #
 # module_kernel_type_subtype_parameter
 #
 # module is whatever you've decided to call this module to destinguish it
 # from other facts, eg faust
+#
+# Custom facts are created automatically by symlinking to this file.
 #
 # Some examples:
 #
