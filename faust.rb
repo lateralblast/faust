@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.9.5
+# Version:      0.9.6
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -1308,7 +1308,7 @@ def handle_readablefiles(type,kernel)
       fact = []
       if File.directory?(home_dir)
         if type == "readabledotfiles"
-          files_list = %x[sudo sh -c "find #{home_dir} -name .\[A-z,0-9\]* -maxdepth 1 -type f -perm +066"]
+          files_list = %x[sudo sh -c "find #{home_dir} -name .\[A-z,0-9\]* -maxdepth 1 -type f -perm +066 2>&1"]
           if files_list =~ /[a-z]/
             files_list = files_list.split(/\n/)
             files_list.each do |check_file|
