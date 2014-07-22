@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.9.1
+# Version:      0.9.4
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -324,7 +324,7 @@ end
 
 def handle_darwin_security(file_info)
   param = file_info[3]
-  fact  = Facter::Util::Resolution.exec("/usr/bin/security #{param} |cut -f2 -d=")
+  fact  = Facter::Util::Resolution.exec("/usr/bin/security #{param} 2>&1 |cut -f2 -d=")
   return fact
 end
 
@@ -364,7 +364,7 @@ def handle_darwin_pmset(subtype)
 end
 
 def handle_darwin_pwpolicy(modname,subtype)
-  node = Facter.value("#{modname}_darwin_system_managednode")
+  node = Facter.value("#{modname}_darwin_managednode")
   fact = Facter::Util::Resolution.exec("pwpolicy -n #{node} -getglobalpolicy #{subtype} 2>&1 |cut -f2 -d= |sed 's/ //g'")
   return fact
 end
@@ -887,7 +887,7 @@ end
 def handle_exists(file_info)
   fact = "no"
   fs_item = "/"+file_info[3..-1].join("/")
-  if File.exist?(fs_item) or File.directory?(fs_item)
+  if File.exist?(fs_item) or File.directory?(fs_item) or File.symlink?(fs_item)
     fact = "yes"
   end
   return fact
@@ -952,6 +952,8 @@ def handle_perms(file_info)
     user    = %x[cat /etc/passwd |awk -F: '{if ($3 == #{uid}) print $1}'].chomp
     group   = %x[cat /etc/group |awk -F: '{if ($3 == #{gid}) print $1}'].chomp
     fact    = mode+","+user+","+group
+  else
+    fact = "File does not exist"
   end
   return fact
 end

@@ -177,3 +177,7 @@
 # Improved ssh type
 # 0.9.1: Fri 18 Jul 2014 09:15:25 EST
 # Bug fixes
+# 0.9.2: Fri 18 Jul 2014 13:55:49 EST
+# Improved permissions type
+# 0.9.3: Fri 18 Jul 2014 14:31:21 EST
+# Fixed managednode type for OS X
