@@ -181,3 +181,7 @@
 # Improved permissions type
 # 0.9.3: Fri 18 Jul 2014 14:31:21 EST
 # Fixed managednode type for OS X
+# 0.9.4: Tue 22 Jul 2014 16:10:51 EST
+# Fixed keychain timeout check stderr output
+# 0.9.5: Tue 22 Jul 2014 20:06:09 EST
+# Fixed readabledotfiles type

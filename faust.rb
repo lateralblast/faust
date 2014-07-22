@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.9.4
+# Version:      0.9.5
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -926,7 +926,7 @@ def handle_dotfiles()
   home_dirs = home_dirs.split(/\n/)
   home_dirs.each do |home_dir|
     if File.directory?(home_dir)
-      file_list = %x[/usr/bin/sudo /usr/bin/find #{home_dir} -name '.*']
+      file_list = %x[sudo sh -c "find #{home_dir} -name '.*'"]
       file_list = file_list.split(/\n/)
       file_list.each do |dot_file|
         if File.exist?(dot_file)
@@ -1289,7 +1289,9 @@ def handle_readablefiles(type,kernel)
     file_name = "hosts.equiv"
     home_dirs = [ '/etc' ]
   else
-    file_name = "."+file_name
+    if type != "readabledotfiles"
+      file_name = "."+file_name
+    end
     home_dirs = %x[cat /etc/passwd |cut -f6 -d":" |grep -v "^/$" |grep -v '^#' |sort |uniq]
     home_dirs = home_dirs.split(/\n/)
     if kernel == "Darwin"
@@ -1306,7 +1308,7 @@ def handle_readablefiles(type,kernel)
       fact = []
       if File.directory?(home_dir)
         if type == "readabledotfiles"
-          files_list = %x[sudo find #{home_dir} -name .\[A-z,0-9\]* -maxdepth 1 -type f -perm +066]
+          files_list = %x[sudo sh -c "find #{home_dir} -name .\[A-z,0-9\]* -maxdepth 1 -type f -perm +066"]
           if files_list =~ /[a-z]/
             files_list = files_list.split(/\n/)
             files_list.each do |check_file|
