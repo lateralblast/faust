@@ -189,3 +189,5 @@
 # Fixed find for readabledotfiles
 # 0.9.7: Wed 23 Jul 2014 12:41:56 EST
 # Added uidlist type
+# 0.9.8: Wed 23 Jul 2014 16:13:03 EST
+# Fixed several bugs include ipadm type for Solaris 11

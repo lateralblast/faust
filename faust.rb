@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.9.7
+# Version:      0.9.8
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -147,12 +147,14 @@ def handle_sunos_ipadm(type,file_info,os_version)
   if os_version =~ /11/
     driver = file_info[3]
     param  = "_"+file_info[4..-2].join("_")
+    puts "ipadm show-prop -p #{param} -co current #{driver}"
+    exit
     fact   = Facter::Util::Resolution.exec("ipadm show-prop #{driver} -co current #{param}")
   end
   return fact
 end
 
-def handle_sunos_inetadm(file_info)
+def handle_sunos_inetadm(file_info,os_version)
   if os_version =~ /10|11/
     file_info = file_info[3..-1].join("_")
     if file_info =~ /param/
@@ -216,8 +218,11 @@ def handle_sunos_eeprom(file_info)
   return fact
 end
 
-def handle_sunos_extendedattributes()
-  fact = %x[find / \( -fstype nfs -o -fstype cachefs -o -fstype autofs -o -fstype ctfs -o -fstype mntfs -o -fstype objfs -o -fstype proc \) -prune -o -xattr -print]
+def handle_sunos_extendedattributes(modname,file_info)
+  search = Facter.value("#{modname}_filesystemsearch")
+  if search != "no"
+    fact = %x[find / \( -fstype nfs -o -fstype cachefs -o -fstype autofs -o -fstype ctfs -o -fstype mntfs -o -fstype objfs -o -fstype proc \) -prune -o -xattr -print]
+  end
   return fact
 end
 
@@ -233,7 +238,7 @@ def handle_sunos(kernel,modname,type,file_info,fact,os_version)
   when "coreadm"
     fact = handle_sunos_coreadm(type,file_info)
   when "logadm"
-    fact = handle_sunos(type,file_info,fact)
+    fact = handle_sunos(type,file_info)
   when "ndd"
     fact = handle_sunos_ndd(type,file_info,os_version)
   when "ipadm"
@@ -247,7 +252,7 @@ def handle_sunos(kernel,modname,type,file_info,fact,os_version)
   when "eeprom"
     fact = handle_sunos_eeprom(file_info)
   when "extendedattributes"
-    fact = handle_sunos_extendedattributes(file_info)
+    fact = handle_sunos_extendedattributes(modname,file_info)
   end
   return fact
 end
@@ -377,7 +382,7 @@ end
 def handle_darwin_corestorage(modname,file_info)
   disk  = Facter.value("#{modname}_darwin_bootdisk")
   param = file_info[3..-1].map(&:capitalize).join(" ")
-  info  = %x[/usr/sbin/diskutil cs list |egrep "#{param}|Disk" |grep -v "\|"].split("\n")
+  info  = %x[/usr/sbin/diskutil cs list |egrep '#{param}|Disk' |grep -v "\|"].split("\n")
   count = 0
   info.each do |line|
     line  = line.chomp
@@ -495,7 +500,7 @@ def handle_pam(kernel,type,file_info,os_version)
   service  = file_info[3]
   facility = file_info[4]
   control  = file_info[5]
-  modname  = file_info[6..-1].joing("_")
+  modname  = file_info[6..-1].join("_")
   if kernel == "SunOS" and os_version !~ /11/
     if facility and control and modname
       fact = %x[cat /etc/pam.conf |awk '($1 == "#{service}" && $2 == "#{facility}" && $3 == "#{control}" && $4 == "#{modname}") {print}']
@@ -670,27 +675,30 @@ end
 
 # Handle unownedfiles
 
-def handle_unownedfiles(kernel,type,file_info)
-  if kernel == "SunOS"
-    find_command = "find / \( -fstype nfs -o -fstype cachefs \
-    -o -fstype autofs -o -fstype ctfs -o -fstype mntfs \
-    -o -fstype objfs -o -fstype proc \) -prune \
-    -o \( -nouser -o -nogroup \) -print"
-  end
-  if kernel == "Linux"
-    find_command = "df --local -P | awk {'if (NR!=1) print $6'} \
-    | xargs -I '{}' find '{}' -xdev -nouser -ls"
-  end
-  if kernel == "AIX"
-    find_command = "find / \( -fstype jfs -o -fstype jfs2 \) \
-    \( -type d -o -type f \) \( -nouser -o -nogroup \) -ls"
-  end
-  if kernel == "FreeBSD"
-    find_command = "find / \( -nouser -o -nogroup \) -print"
-  end
-  fact = %x[#{find_command}]
-  if fact
-    fact = fact.gsub(/\n/,",")
+def handle_unownedfiles(modname,kernel,type,file_info)
+  search = Facter.value("#{modname}_filesystemsearch")
+  if search != "no"
+    if kernel == "SunOS"
+      find_command = "find / \( -fstype nfs -o -fstype cachefs \
+      -o -fstype autofs -o -fstype ctfs -o -fstype mntfs \
+      -o -fstype objfs -o -fstype proc \) -prune \
+      -o \( -nouser -o -nogroup \) -print"
+    end
+    if kernel == "Linux"
+      find_command = "df --local -P | awk {'if (NR!=1) print $6'} \
+      | xargs -I '{}' find '{}' -xdev -nouser -ls"
+    end
+    if kernel == "AIX"
+      find_command = "find / \( -fstype jfs -o -fstype jfs2 \) \
+      \( -type d -o -type f \) \( -nouser -o -nogroup \) -ls"
+    end
+    if kernel == "FreeBSD"
+      find_command = "find / \( -nouser -o -nogroup \) -print"
+    end
+    fact = %x[#{find_command}]
+    if fact
+      fact = fact.gsub(/\n/,",")
+    end
   end
   return fact
 end
@@ -743,6 +751,8 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     else
       file = "/etc/sshd_config"
     end
+  when /^syslog$/
+    file = "/etc/syslog.conf"
   when /cron|sys-suspend|passwd/
     file = "/etc/default/#{prefix}"
   when /system/
@@ -796,7 +806,7 @@ end
 
 # Handle services type
 
-def handle_services(kernel,type,os_distro)
+def handle_services(kernel,type,os_distro,os_version)
   if type == "rctcpservices"
     if kernel == "AIX"
       fact = %x[cat /etc/rc.tcpip |grep -v '^#' |awk '{print $2}']
@@ -926,11 +936,13 @@ def handle_dotfiles()
   home_dirs = home_dirs.split(/\n/)
   home_dirs.each do |home_dir|
     if File.directory?(home_dir)
-      file_list = %x[sudo sh -c "find #{home_dir} -name '.*'"]
-      file_list = file_list.split(/\n/)
-      file_list.each do |dot_file|
-        if File.exist?(dot_file)
-          dot_files.push(dot_file)
+      if home_dir !~ /^\/$/
+        file_list = %x[sudo sh -c "find #{home_dir} -name '.*'"]
+        file_list = file_list.split(/\n/)
+        file_list.each do |dot_file|
+          if File.exist?(dot_file)
+            dot_files.push(dot_file)
+          end
         end
       end
     end
@@ -1124,7 +1136,7 @@ def handle_invalidsystem_types(kernel,type)
     user_list    = user_list.split("\n")
     if kernel != "Darwin"
       user_list.each do |user_name|
-        invalid_check = %x[cat /etc/shadow |egrep -v "\*|\!\!|NP|UP|LK" |grep '^#{user_name}:'']
+        invalid_check = %x[cat /etc/shadow |egrep -v "\*|\!\!|NP|UP|LK" |grep '^#{user_name}:']
         if invalid_check =~ /#{user_name}/
           invalid_list.push(user_name)
         end
@@ -1590,7 +1602,7 @@ if file_name !~ /template|operatingsystemupdate/
           when "stickybitfiles"
             fact = handle_stickybitfiles(kernel)
           when "unownedfiles"
-            fact = handle_unownedfile(kernel,type,fact_info)
+            fact = handle_unownedfile(modname,kernel,type,fact_info)
           when "worldwritablefiles"
             fact = handle_worldwritable(kernel)
           end
@@ -1667,7 +1679,7 @@ if file_name !~ /template|operatingsystemupdate/
         when "exists"
           fact = handle_exists(file_info)
         when /services/
-          fact = handle_services(kernel,type,os_distro)
+          fact = handle_services(kernel,type,os_distro,os_version)
         when /duplicate/
           fact = handle_duplicate(type,file_info)
         when /configfile/
