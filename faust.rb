@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.9.8
+# Version:      0.9.9
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -146,9 +146,7 @@ end
 def handle_sunos_ipadm(type,file_info,os_version)
   if os_version =~ /11/
     driver = file_info[3]
-    param  = "_"+file_info[4..-2].join("_")
-    puts "ipadm show-prop -p #{param} -co current #{driver}"
-    exit
+    param  = "_"+file_info[4..-1].join("_")
     fact   = Facter::Util::Resolution.exec("ipadm show-prop #{driver} -co current #{param}")
   end
   return fact
@@ -1549,17 +1547,42 @@ def handle_skel(file_info)
   return fact
 end
 
+# Debug
+
+debug_mode = "yes"
+debug_type = "ipadm"
+
+if file_name =~ /_chsec_/
+  file_name = file_name.gsub(/_chsec_/,"_lssec_")
+end
+
+file_info = file_name.split("_")
+modname   = file_info[0]
+f_kernel  = file_info[1]
+type      = file_info[2]
+
+if debug_mode
+  if debug_mode == "yes"
+    if debug_type
+      if type != debug_type
+        get_fact = "no"
+      else
+        get_fact = "yes"
+      end
+    else
+      get_fact = "yes"
+    end
+  else
+    get_fact = "yes"
+  end
+else
+  get_fact = "yes"
+end
+
 # Main code
 
-if file_name !~ /template|operatingsystemupdate/
-  if file_name =~ /_chsec_/
-    file_name = file_name.gsub(/_chsec_/,"_lssec_")
-  end
+if file_name !~ /template|operatingsystemupdate/ and get_fact == "yes"
   kernel = Facter.value("kernel")
-  file_info = file_name.split("_")
-  modname   = file_info[0]
-  f_kernel  = file_info[1]
-  type      = file_info[2]
   if f_kernel != "all"
     if f_kernel =~ /osx|darwin/
       f_kernel = "Darwin"

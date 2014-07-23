@@ -191,3 +191,5 @@
 # Added uidlist type
 # 0.9.8: Wed 23 Jul 2014 16:13:03 EST
 # Fixed several bugs include ipadm type for Solaris 11
+# 0.9.9: Wed 23 Jul 2014 16:33:36 EST
+# Added debug on type capability
