@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.9.6
+# Version:      0.9.7
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -1471,9 +1471,19 @@ end
 # Handle userlist
 
 def handle_userlist()
-  fact = %x[cat /etc/passwd |cut -f1 -d:]
+  fact = %x[cat /etc/passwd |grep -v '^#' |cut -f1 -d:]
   if fact
-    fact = fact.gsub(/\n/,"")
+    fact = fact.gsub(/\n/,",")
+  end
+  return fact
+end
+
+# Handle uid list
+
+def handle_uidlist()
+  fact = %x[cat /etc/passwd |grep -v '^#' |awk -F':' '{print $1":"$3}']
+  if fact
+    fact = fact.gsub(/\n/,",")
   end
   return fact
 end
@@ -1598,6 +1608,8 @@ if file_name !~ /template|operatingsystemupdate/
           fact = handle_emptypasswordfields(kernel)
         when "userlist"
           fact = handle_userlist()
+        when "uidlist"
+          fact = handle_uidlist()
         when "reserveduids"
           fact = handle_reserveduids()
         when /primarygroup/

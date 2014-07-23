@@ -187,3 +187,5 @@
 # Fixed readabledotfiles type
 # 0.9.6: Wed 23 Jul 2014 06:50:15 EST
 # Fixed find for readabledotfiles
+# 0.9.7: Wed 23 Jul 2014 12:41:56 EST
+# Added uidlist type
