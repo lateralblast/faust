@@ -193,3 +193,17 @@
 # Fixed several bugs include ipadm type for Solaris 11
 # 0.9.9: Wed 23 Jul 2014 16:33:36 EST
 # Added debug on type capability
+# 1.0.0: Wed 23 Jul 2014 18:15:41 EST
+# fixed ipadm type for Solaris
+# 1.0.1: Wed 23 Jul 2014 18:32:23 EST
+# Fixed bug with logadm type for Solaris
+# 1.0.2: Wed 23 Jul 2014 21:44:51 EST
+# Fixed crontab type
+# 1.0.3: Wed 23 Jul 2014 22:00:45 EST
+# Fixed nis types
+# 1.0.4: Thu 24 Jul 2014 10:11:41 EST
+# Fixed passwd and system types
+# 1.0.5: Thu 24 Jul 2014 13:32:19 EST
+# Fixed readableorwritable type
+# 1.0.6: Thu 24 Jul 2014 15:05:21 EST
+# Fixed audit types

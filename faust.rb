@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      0.9.9
+# Version:      1.0.6
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -80,7 +80,7 @@ def get_param_value(kernel,modname,type,file_info,os_distro,os_version)
       else
         param = file_info[3..-1].join("_")
         case type
-        when "pam"
+        when /pam|login/
           fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}'")
         when /ssh|apache/
           fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}' |grep -v '#{param}[A-z,0-9]' |awk '{print $2}'")
@@ -131,7 +131,7 @@ def handle_sunos_logadm(type,file_info)
 end
 
 def handle_sunos_ndd(type,file_info,os_version)
-  if os_version =~ /10/
+  if os_version =~ /^10/
     driver = "/dev/"+file_info[3]
     param  = file_info[4..-2].join("_")
     if param == "tcp_extra_priv_ports_add"
@@ -144,10 +144,10 @@ def handle_sunos_ndd(type,file_info,os_version)
 end
 
 def handle_sunos_ipadm(type,file_info,os_version)
-  if os_version =~ /11/
+  if os_version =~ /^11/
     driver = file_info[3]
     param  = "_"+file_info[4..-1].join("_")
-    fact   = Facter::Util::Resolution.exec("ipadm show-prop #{driver} -co current #{param}")
+    fact   = Facter::Util::Resolution.exec("ipadm show-prop -p #{param} #{driver} -co current")
   end
   return fact
 end
@@ -162,7 +162,7 @@ def handle_sunos_inetadm(file_info,os_version)
       else
         service = service.gsub(/_/,"/")
       end
-      fact = Facter::Util::Resolution.exec("inetadm -l #{service} |grep #{param} |cut -f2 -d=")
+      fact = Facter::Util::Resolution.exec("inetadm -l #{service} |grep '#{param}' |cut -f2 -d=")
     end
   end
   return fact
@@ -202,7 +202,7 @@ end
 
 def handle_sunos_power(kernel,modname,type,file_info,os_version)
   os_distro = ""
-  if os_version == "5.11"
+  if os_version =~ /^11/
     fact = get_param_value(kernel,modname,type,file_info,os_distro,os_version)
   else
     fact = handle_sunos_poweradm(file_info)
@@ -227,7 +227,7 @@ end
 def handle_sunos(kernel,modname,type,file_info,fact,os_version)
   os_distro = ""
   case type
-  when /cron$|login|sys-suspend|passwd|system|^audit/
+  when /cron$|login$|sys-suspend|passwd$|system$|^auditclass$|^auditevent$|^auditcontrol$|^audituser$/
     fact = get_param_value(kernel,modname,type,file_info,os_distro,os_version)
   when /power/
     fact = handle_sunos_power(kernel,modname,type,file_info,os_version)
@@ -236,7 +236,7 @@ def handle_sunos(kernel,modname,type,file_info,fact,os_version)
   when "coreadm"
     fact = handle_sunos_coreadm(type,file_info)
   when "logadm"
-    fact = handle_sunos(type,file_info)
+    fact = handle_sunos_logadm(type,file_info)
   when "ndd"
     fact = handle_sunos_ndd(type,file_info,os_version)
   when "ipadm"
@@ -261,7 +261,7 @@ def handle_freebsd(kernel,modname,type,file_info,fact)
   os_distro  = ""
   os_version = ""
   case type
-  when /login|rc|sysct|rcconf|rc.confl/
+  when /login$|rc|sysct|rcconf|rc.confl/
     fact = get_param_value(kernel,modname,type,file_info,os_distro,os_version)
   end
   return fact
@@ -499,7 +499,7 @@ def handle_pam(kernel,type,file_info,os_version)
   facility = file_info[4]
   control  = file_info[5]
   modname  = file_info[6..-1].join("_")
-  if kernel == "SunOS" and os_version !~ /11/
+  if kernel == "SunOS" and os_version !~ /^11/
     if facility and control and modname
       fact = %x[cat /etc/pam.conf |awk '($1 == "#{service}" && $2 == "#{facility}" && $3 == "#{control}" && $4 == "#{modname}") {print}']
     else
@@ -735,7 +735,7 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     end
   when /pam/
     if kernel == "SunOS"
-      if os_version =~ /11/
+      if os_version =~ /^11/
         file = "/etc/pam.d"+prefix.gsub(/pam/,"")
       else
         file = "/etc/pam.conf"
@@ -815,10 +815,10 @@ def handle_services(kernel,type,os_distro,os_version)
       fact = %x[launchctl list |awk '{print $3}' |grep -v '^Label']
     end
     if kernel == "SunOS"
-      if os_version == "5.11"
+      if os_version =~ /^11/
         fact = %x[svcs -a |egrep '^online|^legacy' |awk '{print $3}']
       else
-        fact = %x[find /etc/rc*.d -type f |grep -v '_[A-z]']
+        fact = %x[find /etc/rc*.d -type f |grep -v "_[A-z]"]
       end
     end
     if kernel == "Linux"
@@ -871,7 +871,7 @@ def handle_services(kernel,type,os_distro,os_version)
       fact = %x[lsitab –a |grep 'on:/usr/sbin/getty']
     end
     if kernel == "SunOS"
-      if os_version =~ /11/
+      if os_version =~ /^11/
         fact = %x[svcs -a |grep online| grep console |grep 'term']
       else
         fact = %x[pmadm -L |egrep 'ttya|ttyb']
@@ -984,21 +984,37 @@ end
 
 # Handle by* types
 
-def handle_readwrite(type,file_info)
+def handle_readwrite(kernel,type,file_info)
   dir_name = file_info[3..-1]
   dir_name = "/"+dir_name.join("/")
   if File.exist?(dir_name) or File.directory?(dir_name)
     if type =~ /byothers/
       if type =~ /readableorwritable/
-        fact = %x[find #{dir_name} -type f -perm +066]
+        if kernel == "SunOS"
+          fact = %x[find #{dir_name} -type f -perm -04 -o -perm -40]
+        else
+          fact = %x[find #{dir_name} -type f -perm +066]
+        end
       else
-        fact = %x[find #{dir_name} -type f -perm +022]
+        if kernel == "SunOS"
+          fact = %x[find #{dir_name} -type f -perm -02 -o -perm -20]
+        else
+          fact = %x[find #{dir_name} -type f -perm +022]
+        end
       end
     else
       if type =~ /readableorwritable/
-        fact = %x[find #{dir_name} -type f -perm +006]
+        if kernel == "SunOS"
+          fact = %x[find #{dir_name} -type f -perm -04]
+        else
+          fact = %x[find #{dir_name} -type f -perm +006]
+        end
       else
-        fact = %x[find #{dir_name} -type f -perm +002]
+        if kernel == "SunOS"
+          fact = %x[find #{dir_name} -type f -perm -02]
+        else
+          fact = %x[find #{dir_name} -type f -perm +002]
+        end
       end
     end
   end
@@ -1013,22 +1029,16 @@ end
 
 def handle_worldwritable(kernel)
   if kernel == "SunOS"
-    find_command = "find / \( -fstype nfs -o -fstype cachefs \
-      -o -fstype autofs -o -fstype ctfs -o -fstype mntfs \
-      -o -fstype objfs -o -fstype proc \) -prune \
-      -o -type f -perm -0002 -print"
+    find_command = "find / \( -fstype nfs -o -fstype cachefs -o -fstype autofs -o -fstype ctfs -o -fstype mntfs -o -fstype objfs -o -fstype proc \) -prune -o -type f -perm -0002 -print"
   end
   if kernel == "Linux"
-    find_command = "df --local -P | awk {'if (NR!=1) print $6'} \
-      | xargs -I '{}' find '{}' -xdev -type f -perm -0002"
+    find_command = "df --local -P | awk {'if (NR!=1) print $6'} | xargs -I '{}' find '{}' -xdev -type f -perm -0002"
   end
   if kernel == "AIX"
-    find_command = "find / \( -fstype jfs -o -fstype jfs2 \) \
-      \( -type d -o -type f \) -perm -o+w -ls"
+    find_command = "find / \( -fstype jfs -o -fstype jfs2 \) \( -type d -o -type f \) -perm -o+w -ls"
   end
   if kernel == "FreeBSD"
-    find_command = "find / \( -fstype ufs -type file -perm -0002 \
-      -a ! -perm -1000 \) -print"
+    find_command = "find / \( -fstype ufs -type file -perm -0002 -a ! -perm -1000 \) -print"
   end
   fact = %x[#{find_command}]
   if fact
@@ -1130,13 +1140,17 @@ end
 def handle_invalidsystem_types(kernel,type)
   invalid_list = []
   if type == "invalidsystemshells"
-    user_list    = %x[cat /etc/passwd | grep -v '^#' |awk -F: '($1!="root" && $1!="sync" && $1!="shutdown" && $1!="halt" && $3<500 && $7!="/sbin/nologin" && $7!="/bin/false" ) {print $1}']
+    user_list    = %x[cat /etc/passwd | grep -v '^#' |awk -F: '($1!="root" && $1!="sync" && $1!="shutdown" && $1!="halt" && $3<500 && $7!="/sbin/nologin" && $7!="/bin/false" ) {print $1":"$7}']
     user_list    = user_list.split("\n")
     if kernel != "Darwin"
-      user_list.each do |user_name|
-        invalid_check = %x[cat /etc/shadow |egrep -v "\*|\!\!|NP|UP|LK" |grep '^#{user_name}:']
-        if invalid_check =~ /#{user_name}/
-          invalid_list.push(user_name)
+      user_list.each do |user_info|
+        (user_name,user_shell) = user_info.split(/:/)
+        if user_name.match(/[A-z]/)
+          if user_shell
+            if !File.exist?(user_shell)
+              invalid_list.push(user_name)
+            end
+          end
         end
       end
     else
@@ -1158,7 +1172,9 @@ def handle_invalidsystem_types(kernel,type)
       end
     end
   end
-  fact = invalid_list.join(",")
+  if invalid_list[0]
+    fact = invalid_list.join(",")
+  end
   return fact
 end
 
@@ -1209,7 +1225,9 @@ def handle_nis(kernel,type)
       fact = %x[cat /etc/passwd |grep '^+']
     end
     if fact
-      fact = fact.gsub("\n",/,/)
+      if fact.match(/\n/)
+        fact = fact.gsub("\n",/,/)
+      end
     end
   end
   return fact
@@ -1245,18 +1263,13 @@ end
 
 def handle_suidfiles(kernel)
   if kernel == "SunOS"
-    find_command = "find / \( -fstype nfs -o -fstype cachefs \
-    -o -fstype autofs -o -fstype ctfs -o -fstype mntfs \
-    -o -fstype objfs -o -fstype proc \) -prune \
-    -o -type f \( -perm -4000 -o -perm -2000 \) -print"
+    find_command = "find / \( -fstype nfs -o -fstype cachefs -o -fstype autofs -o -fstype ctfs -o -fstype mntfs -o -fstype objfs -o -fstype proc \) -prune -o -type f \( -perm -4000 -o -perm -2000 \) -print"
   end
   if kernel == "AIX"
-    find_command = "find / \( -fstype jfs -o -fstype jfs2 \) \
-    \( -perm -04000 -o -perm -02000 \) -typ e f -ls"
+    find_command = "find / \( -fstype jfs -o -fstype jfs2 \) \( -perm -04000 -o -perm -02000 \) -typ e f -ls"
   end
   if kernel == "Linux"
-    find_command = "df --local -P | awk {'if (NR!=1) print $6'} \
-    | xargs -I '{}' find '{}' -xdev -type f -perm -4000 -o -perm -2000 -print"
+    find_command = "df --local -P | awk {'if (NR!=1) print $6'} | xargs -I '{}' find '{}' -xdev -type f -perm -4000 -o -perm -2000 -print"
   end
   fact = %x[#{find_command}]
   if fact
@@ -1269,18 +1282,13 @@ end
 
 def handle_stickybitfiles(kernel)
   if kernel == "SunOS"
-    find_command = "find / \( -fstype nfs -o -fstype cachefs \
-    -o -fstype autofs -o -fstype ctfs -o -fstype mntfs \
-    -o -fstype objfs -o -fstype proc \) -prune \
-    -o -type f \( -perm -0002 -o -perm -1000 \) -print"
+    find_command = "find / \( -fstype nfs -o -fstype cachefs -o -fstype autofs -o -fstype ctfs -o -fstype mntfs -o -fstype objfs -o -fstype proc \) -prune -o -type f \( -perm -0002 -o -perm -1000 \) -print"
   end
   if kernel == "AIX"
-    find_command = "find / \( -fstype jfs -o -fstype jfs2 \) \
-    \( -perm -00002 -o -perm -01000 \) -typ e f -ls"
+    find_command = "find / \( -fstype jfs -o -fstype jfs2 \) \( -perm -00002 -o -perm -01000 \) -typ e f -ls"
   end
   if kernel == "Linux"
-    find_command = "df --local -P | awk {'if (NR!=1) print $6'} \
-    | xargs -I '{}' find '{}' -xdev -type f -perm -0002 -o -perm -1000 -print"
+    find_command = "df --local -P | awk {'if (NR!=1) print $6'} | xargs -I '{}' find '{}' -xdev -type f -perm -0002 -o -perm -1000 -print"
   end
   fact = %x[#{find_command}]
   if fact
@@ -1369,26 +1377,32 @@ def get_user_crontab_file(kernel,modname,type,user_name)
   return cron_file
 end
 
-def handle_crontabfile(kernel,type,file_info)
+def handle_crontabfile(kernel,type,file_name)
   if type =~ /crontabfile/
-    search_file = file_info[3].gsub(/crontabfile/,"")
+    search_file = type
+  else
+    search_file = file_name
   end
+  search_file = search_file.gsub(/crontabfile/,"")
   if kernel == "Linux"
     cron_dir = "/etc/cron.*/"
+    fact     = Facter::Util::Resolution.exec("find #{cron_dir} -name #{search_file}")
   end
   if kernel == "SunOS"
     cron_dir = "/var/spool/cron/crontabs/"
+    fact     = cron_dir+search_file
   end
-  fact = Facter::Util::Resolution.exec("find #{cron_dir} -name #{search_file}")
   return fact
 end
 
 # Handle crontab
 
 def get_user_crontab(kernel,modname,type,file_info)
-  user = file_info[3]
-  cron = get_user_cron_file(kernel,modname,type,user)
-  fact = %x[sudo cat #{cron}]
+  user_name = file_info[-1]
+  cron_file = get_user_crontab_file(kernel,modname,type,user_name)
+  if File.exist?(cron_file)
+    fact = %x[sudo cat #{cron_file}]
+  end
   return fact
 end
 
@@ -1458,7 +1472,7 @@ def handle_env(type,file_info)
   user  = type.gsub(/env$/,"")
   if file_info[3]
     param = file_info[3..-1].join("_")
-    fact = Facter::Util::Resolution.exec("sudo su - #{user} -c 'set' |grep '^#{param}'")
+    fact = Facter::Util::Resolution.exec("sudo su - #{user} -c \"set |grep '^#{param}'\"")
   else
     fact = %x[sudo su - #{user} -c 'set']
   end
@@ -1549,8 +1563,8 @@ end
 
 # Debug
 
-debug_mode = "yes"
-debug_type = "ipadm"
+debug_mode = "no"
+debug_type = ""
 
 if file_name =~ /_chsec_/
   file_name = file_name.gsub(/_chsec_/,"_lssec_")
@@ -1564,8 +1578,12 @@ type      = file_info[2]
 if debug_mode
   if debug_mode == "yes"
     if debug_type
-      if type != debug_type
-        get_fact = "no"
+      if debug_type =~ /[A-z]/
+        if type != debug_type
+          get_fact = "no"
+        else
+          get_fact = "yes"
+        end
       else
         get_fact = "yes"
       end
@@ -1602,6 +1620,13 @@ if file_name !~ /template|operatingsystemupdate/ and get_fact == "yes"
     subtype   = file_info[3]
   end
   if f_kernel == "all" or f_kernel == kernel
+    if debug_mode == "yes" and file_name.match("_")
+      puts "=== Debug Information ==="
+      puts "FILE:    "+file_name
+      puts "KERNEL:  "+f_kernel
+      puts "MODULE:  "+modname
+      puts "TYPE:    "+type
+    end
     if f_kernel == "all"
       file_info[1] = kernel
       fact_name    = file_info.join("_")
@@ -1616,7 +1641,7 @@ if file_name !~ /template|operatingsystemupdate/ and get_fact == "yes"
         confine :kernel => f_kernel
       end
       setcode do
-        fact   = ""
+        fact = ""
         os_version = Facter.value("operatingsystemrelease")
         if $fs_search == "yes"
           case type
@@ -1664,7 +1689,7 @@ if file_name !~ /template|operatingsystemupdate/ and get_fact == "yes"
         when /cron$/
           fact = handle_cron(kernel,type)
         when "crontab"
-          fact = get_user_crontab(kernel,modname,type,user_name)
+          fact = get_user_crontab(kernel,modname,type,file_info)
         when /^nis/
           fact = handle_nis(kernel,type)
         when /groupmembers/
@@ -1674,7 +1699,7 @@ if file_name !~ /template|operatingsystemupdate/ and get_fact == "yes"
         when /syslog$/
           fact = handle_syslog(kernel,modname,type,file_info,os_distro,os_version)
         when /byothers|byeveryone/
-          fact = handle_readwrite(type,file_info)
+          fact = handle_readwrite(kernel,type,file_info)
         when /directorylisting/
           fact = handle_directorylisting(type,file_info)
         when "inactivewheelusers"
@@ -1737,9 +1762,9 @@ else
     Facter.add("operatingsystemupdate") do
       if $kernel == "SunOS"
         case os_version
-        when "5.11"
+        when /^11/
           fact = Facter::Util::Resolution.exec("cat /etc/release |grep Solaris |awk '{print $3}' |cut -f2 -d'.'`")
-        when "5.10"
+        when /^10/
           fact = Facter::Util::Resolution.exec("cat /etc/release |grep Solaris |awk '{print $5}' |cut -f2 -d'_' |sed 's/[A-z]//g'")
         else
           fact = Facter::Util::Resolution.exec("cat /etc/release |grep Solaris |awk '{print $4}' |cut -f2 -d'_' |sed 's/[A-z]//g'")
