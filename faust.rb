@@ -1148,6 +1148,27 @@ end
 
 def handle_invalidsystem_types(kernel,type)
   invalid_list = []
+  if type == "invalidhomedirs"
+    user_list    = %x[cat /etc/passwd | grep -v '^#' |awk -F: '($1!="root" && $1!="sync" && $1!="shutdown" && $1!="halt" && $3<500 && $7!="/sbin/nologin" && $7!="/bin/false" ) {print $1":"$2":"$6}']
+    user_list    = user_list.split("\n")
+    user_list.each do |user_info|
+      (user_name,user_uid,user_home) = user_info.split(/:/)
+      if user_name.match(/[A-z]/)
+        if user_home
+          if !File.directory?(user_home)
+            invalid_list.push(user_name)
+          else
+            dir_uid = File.stat(user_home).uid
+            if dir_uid != user_uid
+              invalid_list.push(user_name)
+            end
+          end
+        else
+          invalid_list.push(user_name)
+        end
+      end
+    end
+  end
   if type == "invalidsystemshells"
     user_list    = %x[cat /etc/passwd | grep -v '^#' |awk -F: '($1!="root" && $1!="sync" && $1!="shutdown" && $1!="halt" && $3<500 && $7!="/sbin/nologin" && $7!="/bin/false" ) {print $1":"$7}']
     user_list    = user_list.split("\n")

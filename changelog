@@ -211,3 +211,5 @@
 # Added filesystem search check for dotfiles
 # 1.0.8: Fri 25 Jul 2014 11:56:27 EST
 # Added exports type
+# 1.0.9: Fri 25 Jul 2014 12:40:18 EST
+# Added invalidhomedirs type
