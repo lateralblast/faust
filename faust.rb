@@ -1606,7 +1606,7 @@ end
 # Get exports
 
 def handle_exports(kernel)
-  case kernl
+  case kernel
   when "SunOS"
     file = "/etc/dfs/dfstab"
   else
