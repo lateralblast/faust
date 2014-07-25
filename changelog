@@ -213,3 +213,7 @@
 # Added exports type
 # 1.0.9: Fri 25 Jul 2014 12:40:18 EST
 # Added invalidhomedirs type
+# 1.1.0: Fri 25 Jul 2014 14:08:19 EST
+# Added invalidhomeowners type
+# 1.1.1: Fri 25 Jul 2014 14:17:27 EST
+# Added defaulthome type

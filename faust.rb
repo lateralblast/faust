@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.0.7
+# Version:      1.1.1
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -1148,20 +1148,32 @@ end
 
 def handle_invalidsystem_types(kernel,type)
   invalid_list = []
-  if type == "invalidhomedirs"
+  if type == "invalidhomeowners"
     user_list    = %x[cat /etc/passwd | grep -v '^#' |awk -F: '($1!="root" && $1!="sync" && $1!="shutdown" && $1!="halt" && $3<500 && $7!="/sbin/nologin" && $7!="/bin/false" ) {print $1":"$2":"$6}']
     user_list    = user_list.split("\n")
     user_list.each do |user_info|
       (user_name,user_uid,user_home) = user_info.split(/:/)
       if user_name.match(/[A-z]/)
+        if !File.directory?(user_home)
+          invalid_list.push(user_info)
+        else
+          dir_uid = File.stat(user_home).uid
+          if dir_uid != user_uid
+            invalid_list.push(user_info)
+          end
+        end
+      end
+    end
+  end
+  if type == "invalidhomedirs"
+    user_list    = %x[cat /etc/passwd | grep -v '^#' |awk -F: '($1!="root" && $1!="sync" && $1!="shutdown" && $1!="halt" && $3<500 && $7!="/sbin/nologin" && $7!="/bin/false" ) {print $1":"$6}']
+    user_list    = user_list.split("\n")
+    user_list.each do |user_info|
+      (user_name,user_home) = user_info.split(/:/)
+      if user_name.match(/[A-z]/)
         if user_home
           if !File.directory?(user_home)
             invalid_list.push(user_name)
-          else
-            dir_uid = File.stat(user_home).uid
-            if dir_uid != user_uid
-              invalid_list.push(user_name)
-            end
           end
         else
           invalid_list.push(user_name)
@@ -1594,10 +1606,10 @@ end
 # Get exports
 
 def handle_exports(kernel)
-  if kernel == "SunOS"
+  case kernl
+  when "SunOS"
     file = "/etc/dfs/dfstab"
-  end
-  if kernel == "Linux"
+  else
     file = "/etc/exports"
   end
   if File.exist?(file)
@@ -1606,6 +1618,19 @@ def handle_exports(kernel)
   return fact
 end
 
+# Get default home directory
+
+def handle_defaulthome(kernel)
+  case kernel
+  when "SunOS"
+    fact = "/export/home"
+  when "Darwin"
+    fact = "/Users"
+  else
+    fact = "/home"
+  end
+  return fact
+end
 # Debug
 
 debug_mode = "no"
@@ -1701,6 +1726,8 @@ if file_name !~ /template|operatingsystemupdate/ and get_fact == "yes"
           end
         end
         case type
+        when "defaulthome"
+          fact = handle_defaulthome(kernel)
         when "exports"
           fact = handle_exports(kernel)
         when "skel"
