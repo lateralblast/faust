@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.0.6
+# Version:      1.0.7
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -86,13 +86,17 @@ def get_param_value(kernel,modname,type,file_info,os_distro,os_version)
           fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}' |grep -v '#{param}[A-z,0-9]' |awk '{print $2}'")
           if type == "ssh"
             if fact !~ /[A-z]|[0-9]/
-              fact = Facter::Util::Resolution.exec("cat #{file} |grep '#{param}' |grep -v '#{param}[A-z,0-9]' |awk '{print $2}'")
+              fact = Facter::Util::Resolution.exec("cat #{file} |grep '#{param}' |grep -v '#{param}[A-z,0-9]' |awk '{print $2}' |head -1")
             end
           end
         when /aliases|event/
           fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}' |grep -v '#{param}[A-z,0-9]' |cut -f2 -d: |sed 's/ //g'")
         else
-         fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}' |grep -v '#{param}[A-z,0-9]' |cut -f2 -d= |sed 's/ //g'")
+          if file =~ /sudoers/ and kernel == "Darwin"
+            fact = Facter::Util::Resolution.exec("sudo sh -c \"cat #{file} |grep -v '^#' |grep '#{param}' |grep -v '#{param}[A-z,0-9]' |cut -f2 -d= |sed 's/ //g'\"")
+          else
+            fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}' |grep -v '#{param}[A-z,0-9]' |cut -f2 -d= |sed 's/ //g'")
+          end
         end
       end
     end
@@ -928,24 +932,29 @@ end
 
 # Handle dotfiles type
 
-def handle_dotfiles()
-  dot_files = []
-  home_dirs = %x[cat /etc/passwd |grep -v '^#' |cut -f6 -d: |uniq]
-  home_dirs = home_dirs.split(/\n/)
-  home_dirs.each do |home_dir|
-    if File.directory?(home_dir)
-      if home_dir !~ /^\/$/
-        file_list = %x[sudo sh -c "find #{home_dir} -name '.*'"]
-        file_list = file_list.split(/\n/)
-        file_list.each do |dot_file|
-          if File.exist?(dot_file)
-            dot_files.push(dot_file)
+def handle_dotfiles(modname)
+  search = Facter.value("#{modname}_filesystemsearch")
+  if search != "no"
+    dot_files = []
+    home_dirs = %x[cat /etc/passwd |grep -v '^#' |cut -f6 -d: |uniq]
+    home_dirs = home_dirs.split(/\n/)
+    home_dirs.each do |home_dir|
+      if File.directory?(home_dir)
+        if home_dir !~ /^\/$/
+          file_list = %x[sudo sh -c "find #{home_dir} -name '.*'"]
+          file_list = file_list.split(/\n/)
+          file_list.each do |dot_file|
+            if File.exist?(dot_file)
+              dot_files.push(dot_file)
+            end
           end
         end
       end
     end
+    if fact
+      fact = dot_files.join(",")
+    end
   end
-  fact = dot_files.join(",")
   return fact
 end
 
@@ -1561,6 +1570,21 @@ def handle_skel(file_info)
   return fact
 end
 
+# Get exports
+
+def handle_exports(kernel)
+  if kernel == "SunOS"
+    file = "/etc/dfs/dfstab"
+  end
+  if kernel == "Linux"
+    file = "/etc/exports"
+  end
+  if File.exist?(file)
+    fact = %x[cat #{file} |grep -v '^#' |grep '[A-z]']
+  end
+  return fact
+end
+
 # Debug
 
 debug_mode = "no"
@@ -1642,7 +1666,7 @@ if file_name !~ /template|operatingsystemupdate/ and get_fact == "yes"
       end
       setcode do
         fact = ""
-        os_version = Facter.value("operatingsystemrelease")
+        os_version = Facter.value("kernelrelease")
         if $fs_search == "yes"
           case type
           when "suidfiles"
@@ -1656,6 +1680,8 @@ if file_name !~ /template|operatingsystemupdate/ and get_fact == "yes"
           end
         end
         case type
+        when "exports"
+          fact = handle_exports(kernel)
         when "skel"
           fact = handle_skel(file_info)
         when "issue"
@@ -1721,7 +1747,7 @@ if file_name !~ /template|operatingsystemupdate/ and get_fact == "yes"
         when "perms"
           fact = handle_perms(file_info)
         when "dotfiles"
-          fact = handle_dotfiles()
+          fact = handle_dotfiles(modname)
         when "installedpackages"
           fact = handle_installedpackages(kernel,os_distro)
         when "exists"
@@ -1757,7 +1783,7 @@ if file_name !~ /template|operatingsystemupdate/ and get_fact == "yes"
   end
 else
   if file_name =~ /operatingsystemupdate/
-    os_version = Facter.value("operatingsystemrelease")
+    os_version = Facter.value("kernelrelease")
     kernel     = Facter.value("kernel")
     Facter.add("operatingsystemupdate") do
       if $kernel == "SunOS"

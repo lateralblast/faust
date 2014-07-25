@@ -207,3 +207,7 @@
 # Fixed readableorwritable type
 # 1.0.6: Thu 24 Jul 2014 15:05:21 EST
 # Fixed audit types
+# 1.0.7: Fri 25 Jul 2014 10:31:36 EST
+# Added filesystem search check for dotfiles
+# 1.0.8: Fri 25 Jul 2014 11:56:27 EST
+# Added exports type
