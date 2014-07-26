@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.1.1
+# Version:      1.1.4
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -193,7 +193,7 @@ end
 def handle_sunos_routeadm(file_info,os_version)
   if os_version =~ /10|11/
     param = file_info[3]
-    fact  = Facter::Util::Resolution.exec("routeadm -p #{param} |cut -f6 -d= |sed 's/ //g'")
+    fact  = Facter::Util::Resolution.exec("routeadm -p #{param} |cut -f4 -d= |sed 's/ //g'")
   end
   return fact
 end
@@ -1158,8 +1158,10 @@ def handle_invalidsystem_types(kernel,type)
           invalid_list.push(user_info)
         else
           dir_uid = File.stat(user_home).uid
-          if dir_uid != user_uid
-            invalid_list.push(user_info)
+          if user_home != "/"
+            if dir_uid != user_uid
+              invalid_list.push(user_info)
+            end
           end
         end
       end
@@ -1450,7 +1452,7 @@ end
 
 # Handle sshkeys
 
-def handle_sshkeys(kernel,type)
+def handle_sshkeys(type,file_info)
   key_files = handle_sshkeyfiles(type)
   key_files = key_files.split(",")
   key_files.each do |key_file|
@@ -1467,8 +1469,12 @@ end
 
 # Handle sshkeyfiles
 
-def handle_sshkeyfiles(kernel,type)
-  user_name = type.gsub(/sshkeyfiles/,"")
+def handle_sshkeyfiles(type,file_info)
+  if type == "sshkeyfiles"
+    user_name = file_info[-1]
+  else
+    user_name = type.gsub(/sshkeyfiles/,"")
+  end
   if kernel == "Darwin" and user_name != "root"
     home_dir = "/Users/"+user_name
   else
@@ -1486,24 +1492,42 @@ end
 
 # Handle primarygroup
 
-def handle_primarygroup(type)
-  gid  = handle_primarygid(type)
-  fact = Facter::Util::Resolution.exec("cat /etc/group |grep ':#{gid}:' |cut -f1 -d:")
+def get_primarygid(user)
+  gid = %x[cat /etc/passwd |grep '^#{user}:' |cut -f4 -d:].chomp
+  return gid
+end
+
+def handle_primarygroup(type,file_info)
+  if type == "primarygroup"
+    user = file_info[-1]
+  else
+    user = type.gsub(/primarygroup/,"")
+  end
+  gid  = get_primarygid(user)
+  fact = %x[cat /etc/group |grep ':#{gid}:' |cut -f1 -d:].chomp
   return fact
 end
 
 # Handle primarygid
 
-def handle_primarygid(type)
-  user = type.gsub(/primarygroup/,"")
-  fact = Facter::Util::Resolution.exec("cat /etc/passwd |grep '^#{user}:' |cut -f4 -d:")
+def handle_primarygid(type,file_info)
+  if type == "primarygid"
+    user = file_info[-1]
+  else
+    user =type.gsub(/primarygid/,"")
+  end
+  fact = get_primarygid(user)
   return fact
 end
 
 # Handle homedir
 
-def handle_homedir(type)
-  user = type.gsub(/homedir/,"")
+def handle_homedir(type,file_info)
+  if type == "homedir"
+    user = file_info[-1]
+  else
+    user = type.gsub(/homedir/,"")
+  end
   fact = Facter::Util::Resolution.exec("cat /etc/passwd |grep '^#{user}:' |cut -f6 -d:")
   return fact
 end
@@ -1511,12 +1535,22 @@ end
 # Handle env
 
 def handle_env(type,file_info)
-  user  = type.gsub(/env$/,"")
-  if file_info[3]
-    param = file_info[3..-1].join("_")
-    fact = Facter::Util::Resolution.exec("sudo su - #{user} -c \"set |grep '^#{param}'\"")
+  if type == "env"
+    user = file_info[3]
+    if file_info[4]
+      param = file_info[4..-1].join("_")
+      fact = Facter::Util::Resolution.exec("sudo su - #{user} -c \"set |grep '^#{param}'\"")
+    else
+      fact = %x[sudo su - #{user} -c 'set']
+    end
   else
-    fact = %x[sudo su - #{user} -c 'set']
+    user  = type.gsub(/env$/,"")
+    if file_info[3]
+      param = file_info[3..-1].join("_")
+      fact = Facter::Util::Resolution.exec("sudo su - #{user} -c \"set |grep '^#{param}'\"")
+    else
+      fact = %x[sudo su - #{user} -c 'set']
+    end
   end
   return fact
 end
@@ -1631,10 +1665,36 @@ def handle_defaulthome(kernel)
   end
   return fact
 end
+
+# Get a list of home permissions
+
+def handle_homeperms()
+  perm_list = []
+  user_list = %x[cat /etc/passwd | grep -v '^#' |awk -F: '($1!="root" && $1!="sync" && $1!="shutdown" && $1!="halt" && $3<500 && $7!="/sbin/nologin" && $7!="/bin/false" ) {print $1":"$6}']
+  user_list = user_list.split("\n")
+  user_list.each do |user_info|
+    (user_name,user_home) = user_info.split(/:/)
+    if user_name.match(/[A-z]/)
+      if user_home != "/"
+        if File.directory?(user_home)
+          mode = File.stat(user_home).mode
+          mode = sprintf("%o",mode)[-4..-1]
+          info = user_home+":"+mode
+          perm_list.push(info)
+        end
+      end
+    end
+  end
+  if perm_list[0]
+    fact = perm_list.join(",")
+  end
+  return fact
+end
+
 # Debug
 
-debug_mode = "no"
-debug_type = ""
+debug_mode = "yes"
+debug_type = "routeadm"
 
 if file_name =~ /_chsec_/
   file_name = file_name.gsub(/_chsec_/,"_lssec_")
@@ -1726,6 +1786,8 @@ if file_name !~ /template|operatingsystemupdate/ and get_fact == "yes"
           end
         end
         case type
+        when "homeperms"
+          fact = handle_homeperms()
         when "defaulthome"
           fact = handle_defaulthome(kernel)
         when "exports"
@@ -1747,15 +1809,15 @@ if file_name !~ /template|operatingsystemupdate/ and get_fact == "yes"
         when "reserveduids"
           fact = handle_reserveduids()
         when /primarygroup/
-          fact = handle_primarygroup(type)
+          fact = handle_primarygroup(type,file_info)
         when /primarygid/
-          fact = handle_primarygid(type)
+          fact = handle_primarygid(type,file_info)
         when /homedir/
-          fact = handle_homedir(type)
+          fact = handle_homedir(type,file_info)
         when /sshkeyfiles/
-          fact = handle_sshkeyfiles(type)
+          fact = handle_sshkeyfiles(type,file_info)
         when /sshkeys/
-          fact = handle_sshkeys(type)
+          fact = handle_sshkeys(type,file_info)
         when /rhostsfiles|shostsfiles|hostsequivfiles|netrcfiles|readabledotfiles/
           fact = handle_readablefiles(type,kernel)
         when "symlink"
