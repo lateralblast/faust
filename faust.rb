@@ -1693,8 +1693,8 @@ end
 
 # Debug
 
-debug_mode = "yes"
-debug_type = "routeadm"
+debug_mode = "no"
+debug_type = ""
 
 if file_name =~ /_chsec_/
   file_name = file_name.gsub(/_chsec_/,"_lssec_")
