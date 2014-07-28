@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.1.4
+# Version:      1.1.8
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -724,6 +724,45 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     prefix = type.gsub(/configfile/,"")
   end
   case prefix
+  when "ftpd"
+    file = "/etc/proftpd.conf"
+  when "ftpdaccess"
+    if kernel == "SunOS"
+      if os_version =~ /11/
+        file = "/etc/proftpd.conf"
+      else
+        file = "/etc/ftpd/ftpaccess"
+      end
+    end
+    if kernel == "Linux"
+      file = "/etc/proftpd.conf"
+    end
+  when "ftpdbanner"
+    if kernel == "SunOS"
+      if os_version =~ /11/
+        file = "/etc/proftpd.conf"
+      else
+        file = "/etc/ftpd/banner.msg"
+      end
+    end
+    if kernel == "Linux"
+      file = "/etc/proftpd.conf"
+    end
+  when "ftpdissue"
+    if kernel == "SunOS"
+      if os_version =~ /11/
+        file = "/etc/proftpd.conf"
+      else
+        file = "/etc/ftpd/banner.msg"
+      end
+    end
+    if kernel == "Linux"
+      file = "/etc/proftpd.conf"
+    end
+  when "proftpd"
+    file = "/etc/proftpd.conf"
+  when "vsftpd"
+    file = "/etc/vsftpd.conf"
   when /^audit|^exec/
     if prefix =~ /class/
       file = "/etc/security/"+prefix.gsub(/class/,"_class")
@@ -752,6 +791,14 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
       file = "/etc/ssh/sshd_config"
     else
       file = "/etc/sshd_config"
+    end
+  when /grub/
+    if kernel == "SunOS"
+      file = %x[bootadm list-menu |grep configuration |cut -f2 -d:].chomp
+      file = file.gsub(/\s+/,"")
+      file = file+"/grub.cfg"
+    else
+      file +"/etc/grub.conf"
     end
   when /^syslog$/
     file = "/etc/syslog.conf"
@@ -905,11 +952,27 @@ def handle_exists(file_info)
   return fact
 end
 
+# Handle legacy packages type (Solaris 11)
+
+def handle_legacypackages(kernel,os_distro,os_version)
+  if kernel == "SunOS"
+    fact = %x[pkginfo -l |egrep 'PKGINST:|VERSION:' |awk '{print $2}'].gsub(/\s+VERSION:\s+/,":").gsub(/\s+PKGINST:\s+/,"")
+  end
+  if fact
+    fact = fact.gsub(/\n/,",")
+  end
+  return fact
+end
+
 # Handle installedpackages type
 
-def handle_installedpackages(kernel,os_distro)
+def handle_installedpackages(kernel,os_distro,os_version)
   if kernel == "SunOS"
-    fact = %x[pkginfo -l |grep PKGINST |awk '{print $2}']
+    if os_version =~ /11/
+      fact = %x[pkg info -l |egrep 'Name:|Version:' |awk '{print $2}'].gsub(/\s+VERSION:\s+/,":").gsub(/\s+PKGINST:\s+/,"")
+    else
+      fact = %x[pkginfo -l |egrep 'PKGINST:|VERSION:' |awk '{print $2}'].gsub(/\s+VERSION:\s+/,":").gsub(/\s+PKGINST:\s+/,"")
+    end
   end
   if kernel == "Linux"
     if os_distro =~ /Ubuntu|Debian/
@@ -960,9 +1023,14 @@ end
 
 # Handle perms type
 
-def handle_perms(file_info)
-  fs_item = file_info[3..-1]
-  fs_item = "/"+fs_item.join("/")
+def handle_perms(kernel,modname,type,file_info,os_distro,os_version)
+  if file_info[3] =~ /configfile/
+    type    = file_info[3].gsub(/configfile/,"")
+    fs_item = get_config_file(kernel,modname,type,file_info,os_distro,os_version)
+  else
+    fs_item = file_info[3..-1]
+    fs_item = "/"+fs_item.join("/")
+  end
   if File.exist?(fs_item)
     mode    = File.stat(fs_item).mode
     mode    = sprintf("%o",mode)[-4..-1]
@@ -1666,6 +1734,26 @@ def handle_defaulthome(kernel)
   return fact
 end
 
+# Get ftpd parameters
+
+def handle_ftpd(kernel,modname,type,file_info,os_distro,os_version)
+  param = file_info[-1]
+  if kernel == "SunOS" and os_version !~ /11/
+    case param.downcase
+    when /umask/
+      file = "/etc/ftpd/ftpaccess"
+    when /banner|issue/
+      file ="/etc/ftpd/banner.msg"
+    end
+  else
+    file = "/etc/proftpd.conf"
+  end
+  if File.exist?(file)
+    fact = Facter::Util::Resolution.exec("cat #{file} |grep -i '#{param}' |grep -v '^#' |awk '{print $2}'")
+  end
+  return fact
+end
+
 # Get a list of home permissions
 
 def handle_homeperms()
@@ -1842,7 +1930,9 @@ if file_name !~ /template|operatingsystemupdate/ and get_fact == "yes"
           fact = handle_inactivewheelusers(kernel)
         when "sudo"
           fact = handle_sudo(kernel,modname,type,file_info,os_distro,os_version)
-        when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|selinux$|cups$|apache$|modprobe|network|xscreensaver/
+        when "ftpd"
+          fact = handle_ftpd(kernel,modname,type,file_info,os_distro,os_version)
+        when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|selinux$|cups$|apache$|modprobe|network|xscreensaver|ftpaccess$|proftpd$/
           fact = get_param_value(kernel,modname,type,file_info,os_distro,os_version)
         when "groupexists"
           fact = handle_groupexists(file_info)
@@ -1855,11 +1945,13 @@ if file_name !~ /template|operatingsystemupdate/ and get_fact == "yes"
         when "mtime"
           fact = handle_mtime(file_info)
         when "perms"
-          fact = handle_perms(file_info)
+          fact = handle_perms(kernel,modname,type,file_info,os_distro,os_version)
         when "dotfiles"
           fact = handle_dotfiles(modname)
         when "installedpackages"
-          fact = handle_installedpackages(kernel,os_distro)
+          fact = handle_installedpackages(kernel,os_distro,os_version)
+        when "legacypackages"
+          fact = handle_installedpackages(kernel,os_distro,os_version)
         when "exists"
           fact = handle_exists(file_info)
         when /services/

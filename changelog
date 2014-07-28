@@ -223,3 +223,11 @@
 # Fixed routeadm type
 # 1.1.4: Sat 26 Jul 2014 10:03:16 EST
 # Improved ssh types
+# 1.1.5: Sun 27 Jul 2014 10:13:20 EST
+# Improved perms routine to allow usage of configfile type
+# 1.1.6: Sun 27 Jul 2014 12:44:54 EST
+# Fixed perms routine handling of configfile
+# 1.1.7: Mon 28 Jul 2014 14:21:07 EST
+# Updated ftpd type
+# 1.1.8: Tue 29 Jul 2014 06:17:56 EST
+# Added legacypackages type for Solaris 11 for SVR4 packages
