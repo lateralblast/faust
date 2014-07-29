@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.2.0
+# Version:      1.2.1
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -80,7 +80,7 @@ def get_param_value(kernel,modname,type,file_info,os_distro,os_version)
       else
         param = file_info[3..-1].join("_")
         case type
-        when /pam|login|gdminit/
+        when /pam|login|gdminit|auditrules/
           fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}'")
         when /ssh|apache/
           fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}' |grep -v '#{param}[A-z,0-9]' |awk '{print $2}'")
@@ -89,7 +89,7 @@ def get_param_value(kernel,modname,type,file_info,os_distro,os_version)
               fact = Facter::Util::Resolution.exec("cat #{file} |grep '#{param}' |grep -v '#{param}[A-z,0-9]' |awk '{print $2}' |head -1")
             end
           end
-        when /aliases|event|XScreenSaver/
+        when /aliases|event|xscreensaver/
           fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}' |grep -v '#{param}[A-z,0-9]' |cut -f2 -d: |sed 's/ //g'")
         else
           if file =~ /sudoers/ and kernel == "Darwin"
@@ -770,6 +770,9 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
   when "vsftpd"
     file = "/etc/vsftpd.conf"
   when /^audit|^exec/
+    if prefix =~ /rules/
+      file = "/etc/audit/audit.rules"
+    end
     if prefix =~ /class/
       file = "/etc/security/"+prefix.gsub(/class/,"_class")
     end
@@ -806,6 +809,8 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     else
       file +"/etc/grub.conf"
     end
+  when /sysstat/
+    file = "/etc/default/sysstat"
   when /XScreenSaver/
     file = "/usr/openwin/lib/app-defaults/XScreenSaver"
   when /^syslog$/
@@ -1940,7 +1945,7 @@ if file_name !~ /template|operatingsystemupdate/ and get_fact == "yes"
           fact = handle_sudo(kernel,modname,type,file_info,os_distro,os_version)
         when "ftpd"
           fact = handle_ftpd(kernel,modname,type,file_info,os_distro,os_version)
-        when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|selinux$|cups$|apache$|modprobe|network|xscreensaver|ftpaccess$|proftpd$|vsftpd$|gdmbanner$|gdm$|gdminit$/
+        when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|selinux$|cups$|apache$|modprobe|network|xscreensaver|ftpaccess$|proftpd$|vsftpd$|gdmbanner$|gdm$|gdminit$|sysstat$/
           fact = get_param_value(kernel,modname,type,file_info,os_distro,os_version)
         when "groupexists"
           fact = handle_groupexists(file_info)

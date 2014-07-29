@@ -235,4 +235,6 @@
 # Added gdm and vsftp types
 # 1.2.0: Wed 30 Jul 2014 09:16:51 EST
 # Added xscreensaver type
+# 1.2.1: Wed 30 Jul 2014 09:35:27 EST
+# Improved auditrules type
 
