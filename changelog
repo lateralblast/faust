@@ -233,4 +233,6 @@
 # Added legacypackages type for Solaris 11 for SVR4 packages
 # 1.1.9: Tue 29 Jul 2014 10:24:45 EST
 # Added gdm and vsftp types
+# 1.2.0: Wed 30 Jul 2014 09:16:51 EST
+# Added xscreensaver type
 

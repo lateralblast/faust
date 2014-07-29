@@ -141,7 +141,7 @@ faust_darwin_defaults_com.apple.alf_globalstate => 0
 - [Apache](https://github.com/lateralblast/faust/wiki/3.2.5.-Apache)
 - [Mail](https://github.com/lateralblast/faust/wiki/3.2.6.-Mail)
 - [FTP](https://github.com/lateralblast/faust/wiki/3.2.7.-FTP)
-- [GDM](3.2.8.-GDM)
+- [X-Windows](3.2.8.-X-Windows)
 
 ## [Operating System Configuration](https://github.com/lateralblast/faust/wiki/3.3.-Operating-System-Configuration) ##
 

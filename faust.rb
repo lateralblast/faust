@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.1.9
+# Version:      1.2.0
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -89,7 +89,7 @@ def get_param_value(kernel,modname,type,file_info,os_distro,os_version)
               fact = Facter::Util::Resolution.exec("cat #{file} |grep '#{param}' |grep -v '#{param}[A-z,0-9]' |awk '{print $2}' |head -1")
             end
           end
-        when /aliases|event/
+        when /aliases|event|XScreenSaver/
           fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}' |grep -v '#{param}[A-z,0-9]' |cut -f2 -d: |sed 's/ //g'")
         else
           if file =~ /sudoers/ and kernel == "Darwin"
@@ -806,6 +806,8 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     else
       file +"/etc/grub.conf"
     end
+  when /XScreenSaver/
+    file = "/usr/openwin/lib/app-defaults/XScreenSaver"
   when /^syslog$/
     file = "/etc/syslog.conf"
   when /cron|sys-suspend|passwd/
