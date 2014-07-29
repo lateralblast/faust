@@ -231,3 +231,6 @@
 # Updated ftpd type
 # 1.1.8: Tue 29 Jul 2014 06:17:56 EST
 # Added legacypackages type for Solaris 11 for SVR4 packages
+# 1.1.9: Tue 29 Jul 2014 10:24:45 EST
+# Added gdm and vsftp types
+

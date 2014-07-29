@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.1.8
+# Version:      1.1.9
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -80,7 +80,7 @@ def get_param_value(kernel,modname,type,file_info,os_distro,os_version)
       else
         param = file_info[3..-1].join("_")
         case type
-        when /pam|login/
+        when /pam|login|gdminit/
           fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}'")
         when /ssh|apache/
           fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}' |grep -v '#{param}[A-z,0-9]' |awk '{print $2}'")
@@ -737,6 +737,12 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     if kernel == "Linux"
       file = "/etc/proftpd.conf"
     end
+  when "gdminit"
+    file = "/etc/gdm/Init/Default"
+  when "gdmbanner"
+    file = "/etc/X11/gdm.conf"
+  when "gdm"
+    file = "/etc/X11/gdm.conf"
   when "ftpdbanner"
     if kernel == "SunOS"
       if os_version =~ /11/
@@ -1932,7 +1938,7 @@ if file_name !~ /template|operatingsystemupdate/ and get_fact == "yes"
           fact = handle_sudo(kernel,modname,type,file_info,os_distro,os_version)
         when "ftpd"
           fact = handle_ftpd(kernel,modname,type,file_info,os_distro,os_version)
-        when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|selinux$|cups$|apache$|modprobe|network|xscreensaver|ftpaccess$|proftpd$/
+        when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|selinux$|cups$|apache$|modprobe|network|xscreensaver|ftpaccess$|proftpd$|vsftpd$|gdmbanner$|gdm$|gdminit$/
           fact = get_param_value(kernel,modname,type,file_info,os_distro,os_version)
         when "groupexists"
           fact = handle_groupexists(file_info)
