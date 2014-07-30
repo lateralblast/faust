@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.2.5
+# Version:      1.2.8
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
