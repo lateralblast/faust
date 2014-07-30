@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.2.4
+# Version:      1.2.5
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -80,7 +80,7 @@ def get_param_value(kernel,modname,type,file_info,os_distro,os_version)
       else
         param = file_info[3..-1].join("_")
         case type
-        when /pam|login|gdminit|auditrules/
+        when /pam|login|gdminit|auditrules|limits/
           fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}'")
         when /ssh|apache/
           fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}' |grep -v '#{param}[A-z,0-9]' |awk '{print $2}'")
@@ -724,6 +724,10 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     prefix = type.gsub(/configfile/,"")
   end
   case prefix
+  when "limits"
+    file = "/etc/security/limits.conf"
+  when "sysctl"
+    file = "/etc/sysctl.conf"
   when "rc"
     file = "/etc/rc.conf"
   when "login"

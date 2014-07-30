@@ -243,4 +243,6 @@
 # Added rc type for rc.conf
 # 1.2.4: Wed 30 Jul 2014 16:18:53 EST
 # Improved login and su types
+# 1.2.5: Wed 30 Jul 2014 16:24:24 EST
+# Added sysctl and limits types
 
