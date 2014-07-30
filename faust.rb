@@ -62,7 +62,7 @@ end
 
 # Get the value of a parameter from a file
 
-def get_param_value(kernel,modname,type,file_info,os_distro,os_version)
+def handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
   file = get_config_file(kernel,modname,type,file_info,os_distro,os_version)
   if file
     if File.exist?(file) or File.symlink?(file)
@@ -207,7 +207,7 @@ end
 def handle_sunos_power(kernel,modname,type,file_info,os_version)
   os_distro = ""
   if os_version =~ /^11/
-    fact = get_param_value(kernel,modname,type,file_info,os_distro,os_version)
+    fact = handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
   else
     fact = handle_sunos_poweradm(file_info)
   end
@@ -232,7 +232,7 @@ def handle_sunos(kernel,modname,type,file_info,fact,os_version)
   os_distro = ""
   case type
   when /cron$|login$|sys-suspend|passwd$|system$|^auditclass$|^auditevent$|^auditcontrol$|^audituser$/
-    fact = get_param_value(kernel,modname,type,file_info,os_distro,os_version)
+    fact = handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
   when /power/
     fact = handle_sunos_power(kernel,modname,type,file_info,os_version)
   when /xresourcesfiles|xsysresourcesfiles/
@@ -266,7 +266,7 @@ def handle_freebsd(kernel,modname,type,file_info,fact)
   os_version = ""
   case type
   when /login$|rc|sysct|rcconf|rc.confl/
-    fact = get_param_value(kernel,modname,type,file_info,os_distro,os_version)
+    fact = handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
   end
   return fact
 end
@@ -318,7 +318,7 @@ end
 def handle_linux(kernel,modname,type,file_info,os_distro,fact,os_version)
   case type
   when /avahi|yum|sysctl/
-    fact = get_param_value(kernel,modname,type,file_info,os_distro,os_version)
+    fact = handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
   when "prelinkstatus"
     fact = handle_linux_prelink_status(kernel,modname,type,file_info,os_distro,os_versione)
   when "audit"
@@ -410,7 +410,7 @@ def handle_darwin(kernel,modname,type,subtype,file_info,fact)
   when "systemprofiler"
     fact = handle_darwin_systemprofiler(file_info)
   when "hostconfig"
-    fact = get_param_value(kernel,modname,type,file_info,os_distro,os_version)
+    fact = handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
   when "managednode"
     fact = handle_darwin_managednode()
   when "pmset"
@@ -727,6 +727,14 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     prefix = type.gsub(/configfile/,"")
   end
   case prefix
+  when "fstab"
+    if kernel == "SunOS"
+      file = "/etc/vfstab"
+    else
+      file = "/etc/fstab"
+    end
+  when "vfstab"
+    file = "/etc/vfstab"
   when "limits"
     file = "/etc/security/limits.conf"
   when "sysctl"
@@ -1511,7 +1519,7 @@ def handle_sudo(kernel,modname,type,file_info,os_distro,os_version)
   return fact
 end
 
-# handle crontab file
+# Handle crontab file
 
 def handle_crontabfile(kernel,type,file_info)
   if type == "crontabfile" or type == "crontab"
@@ -1531,12 +1539,30 @@ def handle_crontabfile(kernel,type,file_info)
   return fact
 end
 
+# Handle file content
+
+def handle_file_content(kernel,type,file_info,os_distro,os_version)
+  file_name = handle_configfile(kernel,type,file_info,os_distro,os_version)
+  if File.exist?(file_name)
+    if kernel == "Darwin"
+      fact = %x[sudo cat #{file_name}]
+    else
+      fact = %x[cat #{file_name}]
+    end
+  end
+  return fact
+end
+
 # Handle crontab
 
 def handle_crontab(kernel,type,file_info)
   cron_file = handle_crontabfile(kernel,type,file_info)
   if File.exist?(cron_file)
-    fact = %x[sudo cat #{cron_file}]
+    if kernel == "Darwin"
+      fact = %x[sudo cat #{cron_file}]
+    else
+      fact = %x[cat #{cron_file}]
+    end
   end
   return fact
 end
@@ -1955,8 +1981,12 @@ if file_name !~ /template|operatingsystemupdate/ and get_fact == "yes"
           fact = handle_sudo(kernel,modname,type,file_info,os_distro,os_version)
         when "ftpd"
           fact = handle_ftpd(kernel,modname,type,file_info,os_distro,os_version)
-        when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|selinux$|cups$|apache$|modprobe|network|xscreensaver|ftpaccess$|proftpd$|vsftpd$|gdmbanner$|gdm$|gdminit$|sysstat$|^rc$|^su$|systemauth$|commonauth$/
-          fact = get_param_value(kernel,modname,type,file_info,os_distro,os_version)
+        when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|selinux$|cups$|apache$|modprobe|network|xscreensaver|ftpaccess$|proftpd$|vsftpd$|gdmbanner$|gdm$|gdminit$|sysstat$|^rc$|^su$|systemauth$|commonauth$|fstab$/
+          if file_info[-1] != type
+            fact = handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
+          else
+            fact = handle_file_content(kernel,type,file_info,os_distro,os_version)
+          end
         when "groupexists"
           fact = handle_groupexists(file_info)
         when "sulogin"

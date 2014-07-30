@@ -249,4 +249,6 @@
 # Added commonauth and systemauth types
 # 1.2.7: Thu 31 Jul 2014 08:06:11 EST
 # Fixed crontab type
+# 1.2.8: Thu 31 Jul 2014 09:25:36 EST
+# Added code to get content of file if no parameter is given to file type
 
