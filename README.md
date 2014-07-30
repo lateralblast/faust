@@ -151,5 +151,6 @@ faust_darwin_defaults_com.apple.alf_globalstate => 0
 - [Authentication](https://github.com/lateralblast/faust/wiki/3.3.4.-Authentication)
 - [Cron and At](https://github.com/lateralblast/faust/wiki/3.3.5.-Cron-And-At)
 - [File and Directory](https://github.com/lateralblast/faust/wiki/3.3.6.-File-And-Directory)
+- [Kernel](https://github.com/lateralblast/faust/wiki/3.3.7.-Kernel)
 
 # [Challenges](https://github.com/lateralblast/faust/wiki/4.-Challenges) #

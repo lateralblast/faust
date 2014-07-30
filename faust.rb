@@ -708,6 +708,9 @@ end
 # Handle configfile type
 
 def handle_configfile(kernel,type,file_info,os_distro,os_version)
+  if type == "configfile"
+    type = file_info[-1]
+  end
   if kernel =~ /Darwin|FreeBSD/
     if type =~ /syslog/
       prefix = "newsyslog"
@@ -730,8 +733,16 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     file = "/etc/sysctl.conf"
   when "rc"
     file = "/etc/rc.conf"
+  when "systemauth"
+    file = "/etc/pam.d/system-auth"
+  when "commonauth"
+    file = "/etc/pam.d/common-auth"
   when "login"
-    file = "/etc/default/login"
+    if kernel == "SunOS"
+      file = "/etc/default/login"
+    else
+      file = "/etc/login.conf"
+    end
   when "su"
     file = "/etc/default/su"
   when "ftpd"
@@ -1953,7 +1964,7 @@ if file_name !~ /template|operatingsystemupdate/ and get_fact == "yes"
           fact = handle_sudo(kernel,modname,type,file_info,os_distro,os_version)
         when "ftpd"
           fact = handle_ftpd(kernel,modname,type,file_info,os_distro,os_version)
-        when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|selinux$|cups$|apache$|modprobe|network|xscreensaver|ftpaccess$|proftpd$|vsftpd$|gdmbanner$|gdm$|gdminit$|sysstat$|^rc$|^su$/
+        when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|selinux$|cups$|apache$|modprobe|network|xscreensaver|ftpaccess$|proftpd$|vsftpd$|gdmbanner$|gdm$|gdminit$|sysstat$|^rc$|^su$|systemauth$|commonauth$/
           fact = get_param_value(kernel,modname,type,file_info,os_distro,os_version)
         when "groupexists"
           fact = handle_groupexists(file_info)

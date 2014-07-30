@@ -245,4 +245,6 @@
 # Improved login and su types
 # 1.2.5: Wed 30 Jul 2014 16:24:24 EST
 # Added sysctl and limits types
+# 1.2.6: Wed 30 Jul 2014 20:35:28 EST
+# Added commonauth and systemauth types
 
