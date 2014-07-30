@@ -239,4 +239,6 @@
 # Improved auditrules type
 # 1.2.2: Wed 30 Jul 2014 10:31:39 EST
 # Improved audit_ config file determination
+# 1.2.3: Wed 30 Jul 2014 13:46:01 EST
+# Added rc type for rc.conf
 
