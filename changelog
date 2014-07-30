@@ -237,4 +237,6 @@
 # Added xscreensaver type
 # 1.2.1: Wed 30 Jul 2014 09:35:27 EST
 # Improved auditrules type
+# 1.2.2: Wed 30 Jul 2014 10:31:39 EST
+# Improved audit_ config file determination
 
