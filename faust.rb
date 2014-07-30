@@ -733,10 +733,12 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     file = "/etc/sysctl.conf"
   when "rc"
     file = "/etc/rc.conf"
-  when "systemauth"
+  when "pamsystemauth"
     file = "/etc/pam.d/system-auth"
-  when "commonauth"
+  when "pamcommonauth"
     file = "/etc/pam.d/common-auth"
+  when "pamsu"
+    file = "/etc/pam.d/su"
   when "login"
     if kernel == "SunOS"
       file = "/etc/default/login"
@@ -1509,25 +1511,15 @@ def handle_sudo(kernel,modname,type,file_info,os_distro,os_version)
   return fact
 end
 
-# Get user/application cron file
+# handle crontab file
 
-def get_user_crontab_file(kernel,modname,type,user_name)
-  file_name = user_name+"crontabfile"
-  fact_name = modname+"_"+kernel.downcase+"_"+file_name
-  cron_file = Facter.value(fact_name)
-  if cron_file !~ /[a-z]/
-    cron_file = handle_crontabfile(kernel,type,file_name)
-  end
-  return cron_file
-end
-
-def handle_crontabfile(kernel,type,file_name)
-  if type =~ /crontabfile/
-    search_file = type
+def handle_crontabfile(kernel,type,file_info)
+  if type == "crontabfile" or type == "crontab"
+    search_file = file_info[-1]
   else
-    search_file = file_name
+    search_file = type.gsub(/crontabfile/,"")
+    search_file = type.gsub(/crontab/,"")
   end
-  search_file = search_file.gsub(/crontabfile/,"")
   if kernel == "Linux"
     cron_dir = "/etc/cron.*/"
     fact     = Facter::Util::Resolution.exec("find #{cron_dir} -name #{search_file}")
@@ -1541,9 +1533,9 @@ end
 
 # Handle crontab
 
-def get_user_crontab(kernel,modname,type,file_info)
-  user_name = file_info[-1]
-  cron_file = get_user_crontab_file(kernel,modname,type,user_name)
+def handle_crontab(kernel,type,file_info)
+  cron_file = handle_crontabfile(kernel,type,file_info)
+  puts cron_file
   if File.exist?(cron_file)
     fact = %x[sudo cat #{cron_file}]
   end
@@ -1945,7 +1937,7 @@ if file_name !~ /template|operatingsystemupdate/ and get_fact == "yes"
         when /cron$/
           fact = handle_cron(kernel,type)
         when "crontab"
-          fact = get_user_crontab(kernel,modname,type,file_info)
+          fact = handle_crontab(kernel,type,file_info)
         when /^nis/
           fact = handle_nis(kernel,type)
         when /groupmembers/
