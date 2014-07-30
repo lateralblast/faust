@@ -1535,7 +1535,6 @@ end
 
 def handle_crontab(kernel,type,file_info)
   cron_file = handle_crontabfile(kernel,type,file_info)
-  puts cron_file
   if File.exist?(cron_file)
     fact = %x[sudo cat #{cron_file}]
   end
