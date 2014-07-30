@@ -774,7 +774,8 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
       file = "/etc/audit/audit.rules"
     end
     if prefix =~ /class|event|control|user/
-      file = "/etc/security/"+prefix.gsub(/#{prefix}/,"#{prefix}_class")
+      file = prefix.gsub(/audit/,"")
+      file = "/etc/security/audit_"+file
     end
   when /login|su|power|passwd/
     if kernel == "SunOS"
