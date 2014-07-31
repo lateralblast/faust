@@ -263,4 +263,6 @@
 # Improved sudoers type
 # 1.3.4: Thu 31 Jul 2014 15:59:44 EST
 # Added rclocal and inetinit types
+# 1.3.5: Thu 31 Jul 2014 16:14:29 EST
+# Added defadduser type
 
