@@ -1896,7 +1896,9 @@ if file_name !~ /template|operatingsystemupdate/ and get_fact == "yes"
   if type =~ /pwpolicy|file|defaults|dscl|pmset/
     subtype   = file_info[3]
   end
-  type = type.gsub(/-/,"")
+  if type
+    type = type.gsub(/-/,"")
+  end
   if f_kernel == "all" or f_kernel == kernel
     if debug_mode == "yes" and file_name.match("_")
       puts "=== Debug Information ==="
