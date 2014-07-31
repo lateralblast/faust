@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.3.6
+# Version:      1.3.7
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -717,12 +717,6 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     end
   end
   case type
-  when "telnetd"
-    file = "/etc/default/telnetd"
-  when "inetinit"
-    file = "/etc/default/inetinit"
-  when "rclocal"
-    file = "/etc/rc.d/local"
   when /selinux/
     prefix = "config"
   when /apache/
@@ -739,6 +733,16 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     else
       file = "/etc/fstab"
     end
+  when "hostconfig"
+    file = "/private/etc/hostconfig"
+  when "ntp"
+    file = "/etc/ntp.conf"
+  when "telnetd"
+    file = "/etc/default/telnetd"
+  when "inetinit"
+    file = "/etc/default/inetinit"
+  when "rclocal"
+    file = "/etc/rc.d/local"
   when "defadduser"
     file = "/usr/sadm/defadduser"
   when "sudoers"
@@ -1998,7 +2002,7 @@ if file_name !~ /template|operatingsystemupdate/ and get_fact == "yes"
           fact = handle_sudo(kernel,modname,type,file_info,os_distro,os_version)
         when "ftpd"
           fact = handle_ftpd(kernel,modname,type,file_info,os_distro,os_version)
-        when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|cups$|apache$|network|xscreensaver|ftpaccess$|proftpd$|vsftpd$|gdmbanner$|gdm$|gdminit$|^rc$|^su$|systemauth$|commonauth$|fstab$|rmmount$|pam$|pamsshd$|pamgdmautologin$|sudoers$/
+        when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|cups$|apache$|network|xscreensaver|ftpaccess$|proftpd$|vsftpd$|gdmbanner$|gdm$|gdminit$|^rc$|^su$|systemauth$|commonauth$|fstab$|rmmount$|pam$|pamsshd$|pamgdmautologin$|sudoers$|sendmailcf$/
           if file_info[-1] != type
             fact = handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
           else
