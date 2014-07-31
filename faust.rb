@@ -743,6 +743,8 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     file = "/etc/rc.conf"
   when "pam"
     file = "/etc/pam.conf"
+  when "pamsshd"
+    file = "/etc/pam.d/sshd"
   when "pamsystemauth"
     file = "/etc/pam.d/system-auth"
   when "pamcommonauth"
@@ -1985,7 +1987,7 @@ if file_name !~ /template|operatingsystemupdate/ and get_fact == "yes"
           fact = handle_sudo(kernel,modname,type,file_info,os_distro,os_version)
         when "ftpd"
           fact = handle_ftpd(kernel,modname,type,file_info,os_distro,os_version)
-        when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|selinux$|cups$|apache$|modprobe|network|xscreensaver|ftpaccess$|proftpd$|vsftpd$|gdmbanner$|gdm$|gdminit$|sysstat$|^rc$|^su$|systemauth$|commonauth$|fstab$|rmmount$/
+        when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|selinux$|cups$|apache$|modprobe|network|xscreensaver|ftpaccess$|proftpd$|vsftpd$|gdmbanner$|gdm$|gdminit$|sysstat$|^rc$|^su$|systemauth$|commonauth$|fstab$|rmmount$|pam$|pamsshd$/
           if file_info[-1] != type
             fact = handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
           else
