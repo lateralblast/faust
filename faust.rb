@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.3.7
+# Version:      1.3.9
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -82,9 +82,9 @@ def handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
         case type
         when /rmmount|pam|login|gdminit|auditrules|limits/
           fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}'")
-        when /ssh|apache/
+        when /sshd|apache|init|umask/
           fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}' |grep -v '#{param}[A-z,0-9]' |awk '{print $2}'")
-          if type == "ssh"
+          if type == "sshd"
             if fact !~ /[A-z]|[0-9]/
               fact = Facter::Util::Resolution.exec("cat #{file} |grep '#{param}' |grep -v '#{param}[A-z,0-9]' |awk '{print $2}' |head -1")
             end
@@ -231,7 +231,7 @@ end
 def handle_sunos(kernel,modname,type,file_info,fact,os_version)
   os_distro = ""
   case type
-  when /cron$|login$|syssuspend$|passwd$|system$|^auditclass$|^auditevent$|^auditcontrol$|^audituser$|defadduser$|inetinit$|rmmount$|telnetd$/
+  when /cron$|login$|syssuspend$|passwd$|system$|^auditclass$|^auditevent$|^auditcontrol$|^audituser$|defadduser$|inetinit$|rmmount$|telnetd$|keyserv$|inetd$|syslogd$|init$|umask$/
     fact = handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
   when /power/
     fact = handle_sunos_power(kernel,modname,type,file_info,os_version)
@@ -410,6 +410,8 @@ def handle_darwin(kernel,modname,type,subtype,file_info,fact)
   when "systemprofiler"
     fact = handle_darwin_systemprofiler(file_info)
   when "hostconfig"
+    fact = handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
+  when "newsyslog"
     fact = handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
   when "managednode"
     fact = handle_darwin_managednode()
@@ -733,6 +735,22 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     else
       file = "/etc/fstab"
     end
+  when "init"
+    if kernel == "SunOS"
+      file = "/etc/default/init"
+    else
+      file = "/etc/sysconfig/init"
+    end
+  when "umask"
+    file = "/etc/init.d/umask"
+  when "syslogd"
+    file = "/etc/default/syslogd"
+  when "keyserv"
+    file = "/etc/default/keyserv"
+  when "inetd"
+    file = "/etc/default/inetd"
+  when "newsyslog"
+    file = "/etc/newsyslog.conf"
   when "hostconfig"
     file = "/private/etc/hostconfig"
   when "ntp"
@@ -846,7 +864,7 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     else
       file = "/etc/pam.d"+prefix.gsub(/pam/,"")
     end
-  when /ssh/
+  when /sshd/
     if File.directory?("/etc/ssh")
       file = "/etc/ssh/sshd_config"
     else

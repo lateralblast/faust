@@ -269,4 +269,8 @@
 # Added telnetd type
 # 1.3.7: Thu 31 Jul 2014 17:02:41 EST
 # Improved ntp and hostconfig types
+# 1.3.8: Thu 31 Jul 2014 17:19:26 EST
+# Added inetd, syslogd and keyserv types
+# 1.3.9: Fri  1 Aug 2014 08:57:40 EST
+# Replaced ssh type with sshd
 
