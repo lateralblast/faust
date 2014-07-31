@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.3.5
+# Version:      1.3.6
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -231,7 +231,7 @@ end
 def handle_sunos(kernel,modname,type,file_info,fact,os_version)
   os_distro = ""
   case type
-  when /cron$|login$|sys-suspend|passwd$|system$|^auditclass$|^auditevent$|^auditcontrol$|^audituser$/
+  when /cron$|login$|syssuspend$|passwd$|system$|^auditclass$|^auditevent$|^auditcontrol$|^audituser$|defadduser$|inetinit$|rmmount$|telnetd$/
     fact = handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
   when /power/
     fact = handle_sunos_power(kernel,modname,type,file_info,os_version)
@@ -265,7 +265,7 @@ def handle_freebsd(kernel,modname,type,file_info,fact)
   os_distro  = ""
   os_version = ""
   case type
-  when /login$|rc|sysct|rcconf|rc.confl/
+  when /login$|rc$|sysctl$|rcconf$|rc.conf$|rclocal$|rc.local$/
     fact = handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
   end
   return fact
@@ -317,7 +317,7 @@ end
 
 def handle_linux(kernel,modname,type,file_info,os_distro,fact,os_version)
   case type
-  when /avahi|yum|sysctl/
+  when /avahi$|yum$|sysctl$|selinux$|modprobe$|rclocal$|rc.local$/
     fact = handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
   when "prelinkstatus"
     fact = handle_linux_prelink_status(kernel,modname,type,file_info,os_distro,os_versione)
@@ -717,6 +717,8 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     end
   end
   case type
+  when "telnetd"
+    file = "/etc/default/telnetd"
   when "inetinit"
     file = "/etc/default/inetinit"
   when "rclocal"
@@ -856,11 +858,11 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     end
   when /sysstat/
     file = "/etc/default/sysstat"
-  when /XScreenSaver/
+  when /xscreensaver|XScreenSaver/
     file = "/usr/openwin/lib/app-defaults/XScreenSaver"
   when /^syslog$/
     file = "/etc/syslog.conf"
-  when /cron|sys-suspend|passwd/
+  when /cron|syssuspend|passwd/
     file = "/etc/default/#{prefix}"
   when /system/
     file = "/etc/system"
@@ -880,12 +882,8 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     file = "/etc/hosts.deny"
   when /sendmailcf/
     file = "/etc/mail/sendmail.cf"
-  when /^rc$|rcconf|rc.conf/
+  when /^rc$|rcconf/
     file = "/etc/rc.conf"
-  when /xscreensaver|XScreenSaver/
-    if kernel == "SunOS"
-      file = "/usr/openwin/lib/app-defaults/XScreenSaver"
-    end
   end
   if file !~ /[A-z]/
     if prefix =~ /aliases/
@@ -2000,7 +1998,7 @@ if file_name !~ /template|operatingsystemupdate/ and get_fact == "yes"
           fact = handle_sudo(kernel,modname,type,file_info,os_distro,os_version)
         when "ftpd"
           fact = handle_ftpd(kernel,modname,type,file_info,os_distro,os_version)
-        when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|selinux$|cups$|apache$|modprobe|network|xscreensaver|ftpaccess$|proftpd$|vsftpd$|gdmbanner$|gdm$|gdminit$|sysstat$|^rc$|^su$|systemauth$|commonauth$|fstab$|rmmount$|pam$|pamsshd$|pamgdmautologin$|sudoers$|rclocal$|inetinit$|defadduser$/
+        when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|cups$|apache$|network|xscreensaver|ftpaccess$|proftpd$|vsftpd$|gdmbanner$|gdm$|gdminit$|^rc$|^su$|systemauth$|commonauth$|fstab$|rmmount$|pam$|pamsshd$|pamgdmautologin$|sudoers$/
           if file_info[-1] != type
             fact = handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
           else
