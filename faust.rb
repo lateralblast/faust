@@ -80,7 +80,7 @@ def handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
       else
         param = file_info[3..-1].join("_")
         case type
-        when /pam|login|gdminit|auditrules|limits/
+        when /rmmount|pam|login|gdminit|auditrules|limits/
           fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}'")
         when /ssh|apache/
           fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}' |grep -v '#{param}[A-z,0-9]' |awk '{print $2}'")
@@ -741,12 +741,16 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     file = "/etc/sysctl.conf"
   when "rc"
     file = "/etc/rc.conf"
+  when "pam"
+    file = "/etc/pam.conf"
   when "pamsystemauth"
     file = "/etc/pam.d/system-auth"
   when "pamcommonauth"
     file = "/etc/pam.d/common-auth"
   when "pamsu"
     file = "/etc/pam.d/su"
+  when "rmmount"
+    file = "/etc/rmmount.conf"
   when "login"
     if kernel == "SunOS"
       file = "/etc/default/login"
@@ -1981,7 +1985,7 @@ if file_name !~ /template|operatingsystemupdate/ and get_fact == "yes"
           fact = handle_sudo(kernel,modname,type,file_info,os_distro,os_version)
         when "ftpd"
           fact = handle_ftpd(kernel,modname,type,file_info,os_distro,os_version)
-        when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|selinux$|cups$|apache$|modprobe|network|xscreensaver|ftpaccess$|proftpd$|vsftpd$|gdmbanner$|gdm$|gdminit$|sysstat$|^rc$|^su$|systemauth$|commonauth$|fstab$/
+        when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|selinux$|cups$|apache$|modprobe|network|xscreensaver|ftpaccess$|proftpd$|vsftpd$|gdmbanner$|gdm$|gdminit$|sysstat$|^rc$|^su$|systemauth$|commonauth$|fstab$|rmmount$/
           if file_info[-1] != type
             fact = handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
           else

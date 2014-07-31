@@ -251,4 +251,8 @@
 # Fixed crontab type
 # 1.2.8: Thu 31 Jul 2014 09:25:36 EST
 # Added code to get content of file if no parameter is given to file type
+# 1.2.9: Thu 31 Jul 2014 09:41:52 EST
+# Added rmmount type
+# 1.3.0: Thu 31 Jul 2014 11:33:34 EST
+# Improved pam type
 
