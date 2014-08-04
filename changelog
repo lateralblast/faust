@@ -277,4 +277,8 @@
 # Fixed main Linux routine
 # 1.4.1: Mon  4 Aug 2014 10:49:49 EST
 # Fixed prelinkstatus and xinetd type
+# 1.4.2: Mon  4 Aug 2014 11:31:30 EST
+# Fixed grubconfigfile type
+# 1.4.3: Mon  4 Aug 2014 13:52:19 EST
+# Added subtype level debugging
 

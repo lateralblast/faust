@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.4.2
+# Version:      1.4.3
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -1868,8 +1868,9 @@ end
 
 # Debug
 
-debug_mode = "no"
-debug_type = ""
+debug_mode    = "yes"
+debug_type    = "perms"
+debug_subtype = "vftpdconfigfile"
 
 if file_name =~ /_chsec_/
   file_name = file_name.gsub(/_chsec_/,"_lssec_")
@@ -1879,6 +1880,9 @@ file_info = file_name.split("_")
 modname   = file_info[0]
 f_kernel  = file_info[1]
 type      = file_info[2]
+if file_info[3]
+  subtype = file_info[3]
+end
 
 if debug_mode
   if debug_mode == "yes"
@@ -1887,7 +1891,19 @@ if debug_mode
         if type != debug_type
           get_fact = "no"
         else
-          get_fact = "yes"
+          if debug_subtype
+            if debug_subtype =~ /[A-z]/
+              if subtype != debug_subtype
+                get_fact ="no"
+              else
+                get_fact = "yes"
+              end
+            else
+              get_fact = "yes"
+            end
+          else
+            get_fact = "yes"
+          end
         end
       else
         get_fact = "yes"
@@ -1934,6 +1950,9 @@ if file_name !~ /template|operatingsystemupdate/ and get_fact == "yes"
       puts "DEBUG: KERNEL:  "+f_kernel
       puts "DEBUG: MODULE:  "+modname
       puts "DEBUG: TYPE:    "+type
+      if subtype
+        puts "DEBUG: SUBTYPE: "+subtype
+      end
     end
     if f_kernel == "all"
       file_info[1] = kernel
