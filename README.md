@@ -123,18 +123,18 @@ pulsar_linux_samba_client =>
 Documentation
 -------------
 
-# [Examples](https://github.com/lateralblast/faust/wiki/2.-Examples) #
+[Examples](https://github.com/lateralblast/faust/wiki/2.-Examples)
 
-# [Types](https://github.com/lateralblast/faust/wiki/3.-Types) #
+[Types](https://github.com/lateralblast/faust/wiki/3.-Types)
 
-## [Platforms](https://github.com/lateralblast/faust/wiki/3.1.-Platforms) ##
+[Platforms](https://github.com/lateralblast/faust/wiki/3.1.-Platforms)
 
 - [AIX](https://github.com/lateralblast/faust/wiki/3.1.1.-AIX)
 - [OSX](https://github.com/lateralblast/faust/wiki/3.1.2.-OSX)
 - [Solaris](https://github.com/lateralblast/faust/wiki/3.1.3.-Solaris)
 - [Linux](https://github.com/lateralblast/faust/wiki/3.1.4.-Linux)
 
-## [Services](https://github.com/lateralblast/faust/wiki/3.2.-Services) ##
+[Services](https://github.com/lateralblast/faust/wiki/3.2.-Services)
 
 - [Printing](https://github.com/lateralblast/faust/wiki/3.2.1.-Printing)
 - [SNMP and Syslog](https://github.com/lateralblast/faust/wiki/3.2.2.-SNMP-And-Syslog)
@@ -145,7 +145,7 @@ Documentation
 - [FTP](https://github.com/lateralblast/faust/wiki/3.2.7.-FTP)
 - [X-Windows](https://github.com/lateralblast/faust/wiki/3.2.8.-X-Windows)
 
-## [Operating System Configuration](https://github.com/lateralblast/faust/wiki/3.3.-Operating-System-Configuration) ##
+[Operating System Configuration](https://github.com/lateralblast/faust/wiki/3.3.-Operating-System-Configuration)
 
 - [Packages](https://github.com/lateralblast/faust/wiki/3.3.1.-Packages)
 - [Password and Privileges](https://github.com/lateralblast/faust/wiki/3.3.2.-Password-And-Privileges)
@@ -155,9 +155,9 @@ Documentation
 - [File and Directory](https://github.com/lateralblast/faust/wiki/3.3.6.-File-And-Directory)
 - [Kernel](https://github.com/lateralblast/faust/wiki/3.3.7.-Kernel)
 
-# [Challenges](https://github.com/lateralblast/faust/wiki/4.-Challenges) #
+[Challenges](https://github.com/lateralblast/faust/wiki/4.-Challenges)
 
-# [Troubleshooting](https://github.com/lateralblast/faust/wiki/5.-Troubleshooting) #
+[Troubleshooting](https://github.com/lateralblast/faust/wiki/5.-Troubleshooting)
 
 Detailed Example
 ----------------
