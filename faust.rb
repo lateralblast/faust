@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.3.9
+# Version:      1.4.0
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -2061,7 +2061,7 @@ if file_name !~ /template|operatingsystemupdate/ and get_fact == "yes"
         end
         case kernel
         when "Linux"
-          fact = handle_linux(kernel,modname,type,file_info,fact,os_version)
+          fact = handle_linux(kernel,modname,type,file_info,os_distro,fact,os_version)
         when "AIX"
           fact = handle_aix(type,file_info,fact)
         when "SunOS"
