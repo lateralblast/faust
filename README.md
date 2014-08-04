@@ -84,6 +84,7 @@ Example Symlinks
 ----------------
 
 ```
+$ ls -l
 lrwxr-xr-x  1 spindler  staff    8 24 Jul 19:05 pulsar_linux_avahi_disable-user-service-publishing.rb -> faust.rb
 lrwxr-xr-x  1 spindler  staff    8 24 Jul 19:05 pulsar_linux_avahi_disallow-other-stacks.rb -> faust.rb
 lrwxr-xr-x  1 spindler  staff    8 24 Jul 19:05 pulsar_linux_avahi_publish-address.rb -> faust.rb
