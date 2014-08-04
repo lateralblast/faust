@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.4.3
+# Version:      1.4.4
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -279,6 +279,9 @@ def get_config_file(kernel,modname,type,file_info,os_distro,os_version)
   file = Facter.value(file)
   if file !~ /[A-z]/
     file = handle_configfile(kernel,type,file_info,os_distro,os_version)
+  end
+  if !file
+    file = "file does not exist"
   end
   return file
 end
@@ -928,6 +931,9 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     end
     file = file_list[0]
   end
+  if !file
+    file = "file does not exist"
+  end
   return file
 end
 
@@ -1111,16 +1117,20 @@ def handle_perms(kernel,modname,type,file_info,os_distro,os_version)
     fs_item = file_info[3..-1]
     fs_item = "/"+fs_item.join("/")
   end
-  if File.exist?(fs_item)
-    mode    = File.stat(fs_item).mode
-    mode    = sprintf("%o",mode)[-4..-1]
-    uid     = File.stat(fs_item).uid.to_s
-    gid     = File.stat(fs_item).gid.to_s
-    user    = %x[cat /etc/passwd |awk -F: '{if ($3 == #{uid}) print $1}'].chomp
-    group   = %x[cat /etc/group |awk -F: '{if ($3 == #{gid}) print $1}'].chomp
-    fact    = mode+","+user+","+group
+  if !fs_item
+    fact = "file does not exist"
   else
-    fact = "File does not exist"
+    if File.exist?(fs_item)
+      mode    = File.stat(fs_item).mode
+      mode    = sprintf("%o",mode)[-4..-1]
+      uid     = File.stat(fs_item).uid.to_s
+      gid     = File.stat(fs_item).gid.to_s
+      user    = %x[cat /etc/passwd |awk -F: '{if ($3 == #{uid}) print $1}'].chomp
+      group   = %x[cat /etc/group |awk -F: '{if ($3 == #{gid}) print $1}'].chomp
+      fact    = mode+","+user+","+group
+    else
+      fact = "file does not exist"
+    end
   end
   return fact
 end
@@ -1868,9 +1878,9 @@ end
 
 # Debug
 
-debug_mode    = "no"
-debug_type    = ""
-debug_subtype = ""
+debug_mode    = "yes"
+debug_type    = "perms"
+debug_subtype = "vftpdconfigfile"
 
 if file_name =~ /_chsec_/
   file_name = file_name.gsub(/_chsec_/,"_lssec_")

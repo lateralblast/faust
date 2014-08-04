@@ -281,4 +281,6 @@
 # Fixed grubconfigfile type
 # 1.4.3: Mon  4 Aug 2014 13:52:19 EST
 # Added subtype level debugging
+# 1.4.4: Mon  4 Aug 2014 14:09:27 EST
+# Updated perms type to output file not found if file does not exist
 
