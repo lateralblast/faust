@@ -1878,9 +1878,9 @@ end
 
 # Debug
 
-debug_mode    = "yes"
-debug_type    = "perms"
-debug_subtype = "vftpdconfigfile"
+debug_mode    = "no"
+debug_type    = ""
+debug_subtype = ""
 
 if file_name =~ /_chsec_/
   file_name = file_name.gsub(/_chsec_/,"_lssec_")
