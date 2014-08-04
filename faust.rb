@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.4.0
+# Version:      1.4.1
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -320,7 +320,7 @@ def handle_linux(kernel,modname,type,file_info,os_distro,fact,os_version)
   when /avahi$|yum$|sysctl$|selinux$|modprobe$|rclocal$|rc.local$/
     fact = handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
   when "prelinkstatus"
-    fact = handle_linux_prelink_status(kernel,modname,type,file_info,os_distro,os_versione)
+    fact = handle_linux_prelink_status(kernel,modname,type,file_info,os_distro,os_version)
   when "audit"
     fact = handle_linux_audit(file_info)
   end
@@ -972,7 +972,9 @@ def handle_services(kernel,type,os_distro,os_version)
   if type =~ /inet/
     if type =~ /xinet/
       if kernel == "Linux"
-        fact = %x[grep enabled /etc/xinetd.d/* |cut -f1 -d:]
+        if File.directory?("/etc/xinetd")
+          fact = %x[grep enabled /etc/xinetd.d/* |cut -f1 -d:]
+        end
       end
     else
       fact = %x[cat /etc/inetd.conf |grep -v '^#' |awk '{print $1}']

@@ -275,4 +275,6 @@
 # Replaced ssh type with sshd
 # 1.4.0: Mon  4 Aug 2014 10:39:32 EST
 # Fixed main Linux routine
+# 1.4.1: Mon  4 Aug 2014 10:49:49 EST
+# Fixed prelinkstatus and xinetd type
 
