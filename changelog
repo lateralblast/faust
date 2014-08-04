@@ -283,4 +283,8 @@
 # Added subtype level debugging
 # 1.4.4: Mon  4 Aug 2014 14:09:27 EST
 # Updated perms type to output file not found if file does not exist
+# 1.4.5: Mon  4 Aug 2014 20:43:17 EST
+# Updated fstab type
+# 1.4.6: Tue  5 Aug 2014 08:25:31 EST
+# Added skel types
 

@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.4.4
+# Version:      1.4.6
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -710,6 +710,19 @@ def handle_unownedfiles(modname,kernel,type,file_info)
   return fact
 end
 
+def handle_skel_configfile(prefix)
+  case prefix
+  when "profileskel"
+    file = "/etc/skel/profile"
+  when "bashprofileskel"
+    file = "/etc/skel/.bash_profile"
+  else
+    file = prefix.gsub(/skel/,"")
+    file = "/etc/skel/."+file
+  end
+  return file
+end
+
 # Handle configfile type
 
 def handle_configfile(kernel,type,file_info,os_distro,os_version)
@@ -744,6 +757,8 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     else
       file = "/etc/sysconfig/init"
     end
+  when /skel/
+    file = handle_skel_configfile(prefix)
   when "umask"
     file = "/etc/init.d/umask"
   when "syslogd"
@@ -1591,11 +1606,16 @@ end
 
 def handle_file_content(kernel,type,file_info,os_distro,os_version)
   file_name = handle_configfile(kernel,type,file_info,os_distro,os_version)
+  if kernel == "Darwin"
+    command = "sudo cat #{file_name}"
+  else
+    command = "cat #{file_name}"
+  end
   if File.exist?(file_name)
-    if kernel == "Darwin"
-      fact = %x[sudo cat #{file_name}]
+    if file_name.match(/fstab/)
+      fact = %x[#{command} |grep "[A-z]" |grep -v "^#"]
     else
-      fact = %x[cat #{file_name}]
+      fact = %x[#{command}]
     end
   end
   return fact
@@ -2051,7 +2071,7 @@ if file_name !~ /template|operatingsystemupdate/ and get_fact == "yes"
           fact = handle_sudo(kernel,modname,type,file_info,os_distro,os_version)
         when "ftpd"
           fact = handle_ftpd(kernel,modname,type,file_info,os_distro,os_version)
-        when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|cups$|apache$|network|xscreensaver|ftpaccess$|proftpd$|vsftpd$|gdmbanner$|gdm$|gdminit$|^rc$|^su$|systemauth$|commonauth$|fstab$|rmmount$|pam$|pamsshd$|pamgdmautologin$|sudoers$|sendmailcf$/
+        when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|cups$|apache$|network|xscreensaver|ftpaccess$|proftpd$|vsftpd$|gdmbanner$|gdm$|gdminit$|^rc$|^su$|systemauth$|commonauth$|fstab$|rmmount$|pam$|pamsshd$|pamgdmautologin$|sudoers$|sendmailcf$|skel$/
           if file_info[-1] != type
             fact = handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
           else
