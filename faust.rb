@@ -998,7 +998,7 @@ def handle_services(kernel,type,os_distro,os_version)
     end
   end
   if type == "serialservices"
-    if  kernel == "AIX"
+    if kernel == "AIX"
       fact = %x[lsitab –a |grep 'on:/usr/sbin/getty']
     end
     if kernel == "SunOS"
@@ -2073,7 +2073,9 @@ if file_name !~ /template|operatingsystemupdate/ and get_fact == "yes"
         when "FreeBSD"
           fact = handle_freebsd(kernel,modname,type,file_info,fact)
         end
-        puts "DEBUG: VALUE:   "+fact
+        if debug_mode == "yes"
+          puts "DEBUG: VALUE:   "+fact
+        end
         fact
       end
     end

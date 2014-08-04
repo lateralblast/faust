@@ -80,8 +80,87 @@ This software is licensed as CC-BA (Creative Commons By Attrbution)
 
 http://creativecommons.org/licenses/by/4.0/legalcode
 
-Example
--------
+Example Symlinks
+----------------
+
+```
+lrwxr-xr-x  1 spindler  staff    8 24 Jul 19:05 pulsar_linux_avahi_disable-user-service-publishing.rb -> faust.rb
+lrwxr-xr-x  1 spindler  staff    8 24 Jul 19:05 pulsar_linux_avahi_disallow-other-stacks.rb -> faust.rb
+lrwxr-xr-x  1 spindler  staff    8 24 Jul 19:05 pulsar_linux_avahi_publish-address.rb -> faust.rb
+lrwxr-xr-x  1 spindler  staff    8 24 Jul 19:05 pulsar_linux_avahi_publish-binfo.rb -> faust.rb
+lrwxr-xr-x  1 spindler  staff    8 24 Jul 19:05 pulsar_linux_avahi_publish-domain.rb -> faust.rb
+lrwxr-xr-x  1 spindler  staff    8 24 Jul 19:05 pulsar_linux_avahi_publish-workstation.rb -> faust.rb
+lrwxr-xr-x  1 spindler  staff    8 24 Jul 19:05 pulsar_linux_avahiconfigfile.rb -> faust.rb
+lrwxr-xr-x  1 spindler  staff    8 30 Jul 22:01 pulsar_linux_commonauth_nullok.rb -> faust.rb
+lrwxr-xr-x  1 spindler  staff    8 30 Jul 22:01 pulsar_linux_commonauth_remember.rb -> faust.rb
+```
+
+Example Output
+--------------
+
+Some example output on Linux:
+
+```
+pulsar_linux_configfile_rclocal => /etc/rc.d/local
+pulsar_linux_configfile_sendmailcf => /etc/mail/sendmail.cf
+pulsar_linux_configfile_sshd => /etc/ssh/sshd_config
+pulsar_linux_configfile_sudoers => /etc/sudoers
+pulsar_linux_configfile_sysstat => /etc/default/sysstat
+pulsar_linux_nisgroupentries =>
+pulsar_linux_nispasswordentries =>
+pulsar_linux_ntp_options =>
+pulsar_linux_ntp_restrict_-6 =>
+pulsar_linux_ntp_restrict_default => restrict default nomodify notrap nopeer noquery
+pulsar_linux_pamcommonfigfile =>
+pulsar_linux_pampasswordauth_authfail =>
+pulsar_linux_perms_var_spool_cron => 0700,root,root
+pulsar_linux_postfix_inet_interfaces =>
+pulsar_linux_primarygid_root => 0
+pulsar_linux_rootenv_path => PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin
+pulsar_linux_samba_client =>
+```
+
+Documentation
+-------------
+
+# [Examples](https://github.com/lateralblast/faust/wiki/2.-Examples) #
+
+# [Types](https://github.com/lateralblast/faust/wiki/3.-Types) #
+
+## [Platforms](https://github.com/lateralblast/faust/wiki/3.1.-Platforms) ##
+
+- [AIX](https://github.com/lateralblast/faust/wiki/3.1.1.-AIX)
+- [OSX](https://github.com/lateralblast/faust/wiki/3.1.2.-OSX)
+- [Solaris](https://github.com/lateralblast/faust/wiki/3.1.3.-Solaris)
+- [Linux](https://github.com/lateralblast/faust/wiki/3.1.4.-Linux)
+
+## [Services](https://github.com/lateralblast/faust/wiki/3.2.-Services) ##
+
+- [Printing](https://github.com/lateralblast/faust/wiki/3.2.1.-Printing)
+- [SNMP and Syslog](https://github.com/lateralblast/faust/wiki/3.2.2.-SNMP-And-Syslog)
+- [SSH](https://github.com/lateralblast/faust/wiki/3.2.3.-SSH)
+- [DNS](https://github.com/lateralblast/faust/wiki/3.2.4.-DNS)
+- [Apache](https://github.com/lateralblast/faust/wiki/3.2.5.-Apache)
+- [Mail](https://github.com/lateralblast/faust/wiki/3.2.6.-Mail)
+- [FTP](https://github.com/lateralblast/faust/wiki/3.2.7.-FTP)
+- [X-Windows](https://github.com/lateralblast/faust/wiki/3.2.8.-X-Windows)
+
+## [Operating System Configuration](https://github.com/lateralblast/faust/wiki/3.3.-Operating-System-Configuration) ##
+
+- [Packages](https://github.com/lateralblast/faust/wiki/3.3.1.-Packages)
+- [Password and Privileges](https://github.com/lateralblast/faust/wiki/3.3.2.-Password-And-Privileges)
+- [User and Groups](https://github.com/lateralblast/faust/wiki/3.3.3.-User-And-Group)
+- [Authentication](https://github.com/lateralblast/faust/wiki/3.3.4.-Authentication)
+- [Cron and At](https://github.com/lateralblast/faust/wiki/3.3.5.-Cron-And-At)
+- [File and Directory](https://github.com/lateralblast/faust/wiki/3.3.6.-File-And-Directory)
+- [Kernel](https://github.com/lateralblast/faust/wiki/3.3.7.-Kernel)
+
+# [Challenges](https://github.com/lateralblast/faust/wiki/4.-Challenges) #
+
+# [Troubleshooting](https://github.com/lateralblast/faust/wiki/5.-Troubleshooting) #
+
+Detailed Example
+----------------
 
 In case you haven't got the idea, here is an example:
 
@@ -120,39 +199,3 @@ It will then appear in the facter output:
 ```
 faust_darwin_defaults_com.apple.alf_globalstate => 0
 ```
-
-# [Examples](https://github.com/lateralblast/faust/wiki/2.-Examples) #
-
-# [Types](https://github.com/lateralblast/faust/wiki/3.-Types) #
-
-## [Platforms](https://github.com/lateralblast/faust/wiki/3.1.-Platforms) ##
-
-- [AIX](https://github.com/lateralblast/faust/wiki/3.1.1.-AIX)
-- [OSX](https://github.com/lateralblast/faust/wiki/3.1.2.-OSX)
-- [Solaris](https://github.com/lateralblast/faust/wiki/3.1.3.-Solaris)
-- [Linux](https://github.com/lateralblast/faust/wiki/3.1.4.-Linux)
-
-## [Services](https://github.com/lateralblast/faust/wiki/3.2.-Services) ##
-
-- [Printing](https://github.com/lateralblast/faust/wiki/3.2.1.-Printing)
-- [SNMP and Syslog](https://github.com/lateralblast/faust/wiki/3.2.2.-SNMP-And-Syslog)
-- [SSH](https://github.com/lateralblast/faust/wiki/3.2.3.-SSH)
-- [DNS](https://github.com/lateralblast/faust/wiki/3.2.4.-DNS)
-- [Apache](https://github.com/lateralblast/faust/wiki/3.2.5.-Apache)
-- [Mail](https://github.com/lateralblast/faust/wiki/3.2.6.-Mail)
-- [FTP](https://github.com/lateralblast/faust/wiki/3.2.7.-FTP)
-- [X-Windows](https://github.com/lateralblast/faust/wiki/3.2.8.-X-Windows)
-
-## [Operating System Configuration](https://github.com/lateralblast/faust/wiki/3.3.-Operating-System-Configuration) ##
-
-- [Packages](https://github.com/lateralblast/faust/wiki/3.3.1.-Packages)
-- [Password and Privileges](https://github.com/lateralblast/faust/wiki/3.3.2.-Password-And-Privileges)
-- [User and Groups](https://github.com/lateralblast/faust/wiki/3.3.3.-User-And-Group)
-- [Authentication](https://github.com/lateralblast/faust/wiki/3.3.4.-Authentication)
-- [Cron and At](https://github.com/lateralblast/faust/wiki/3.3.5.-Cron-And-At)
-- [File and Directory](https://github.com/lateralblast/faust/wiki/3.3.6.-File-And-Directory)
-- [Kernel](https://github.com/lateralblast/faust/wiki/3.3.7.-Kernel)
-
-# [Challenges](https://github.com/lateralblast/faust/wiki/4.-Challenges) #
-
-# [Troubleshooting](https://github.com/lateralblast/faust/wiki/5.-Troubleshooting) #
