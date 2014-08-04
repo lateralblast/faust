@@ -154,3 +154,5 @@ faust_darwin_defaults_com.apple.alf_globalstate => 0
 - [Kernel](https://github.com/lateralblast/faust/wiki/3.3.7.-Kernel)
 
 # [Challenges](https://github.com/lateralblast/faust/wiki/4.-Challenges) #
+
+# [Troubleshooting](https://github.com/lateralblast/faust/wiki/5.-Troubleshooting) #

@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.4.1
+# Version:      1.4.2
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -876,7 +876,7 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
       file = file.gsub(/\s+/,"")
       file = file+"/grub.cfg"
     else
-      file +"/etc/grub.conf"
+      file = "/etc/grub.conf"
     end
   when /sysstat/
     file = "/etc/default/sysstat"
@@ -1929,11 +1929,11 @@ if file_name !~ /template|operatingsystemupdate/ and get_fact == "yes"
   end
   if f_kernel == "all" or f_kernel == kernel
     if debug_mode == "yes" and file_name.match("_")
-      puts "=== Debug Information ==="
-      puts "FILE:    "+file_name
-      puts "KERNEL:  "+f_kernel
-      puts "MODULE:  "+modname
-      puts "TYPE:    "+type
+      puts "DEBUG: === Debug Information ==="
+      puts "DEBUG: FACT:    "+file_name
+      puts "DEBUG: KERNEL:  "+f_kernel
+      puts "DEBUG: MODULE:  "+modname
+      puts "DEBUG: TYPE:    "+type
     end
     if f_kernel == "all"
       file_info[1] = kernel
@@ -2073,6 +2073,7 @@ if file_name !~ /template|operatingsystemupdate/ and get_fact == "yes"
         when "FreeBSD"
           fact = handle_freebsd(kernel,modname,type,file_info,fact)
         end
+        puts "DEBUG: VALUE:   "+fact
         fact
       end
     end
