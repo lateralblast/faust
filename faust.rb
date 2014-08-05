@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.4.8
+# Version:      1.4.9
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -739,8 +739,6 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     prefix = "config"
   when /apache/
     prefix = "httpd"
-  when /cups/
-    prefix = "cupsd"
   else
     prefix = type.gsub(/configfile/,"")
   end
@@ -757,8 +755,12 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     else
       file = "/etc/sysconfig/init"
     end
+  when /init$|initd$/
+    file = "/etc/init.d/"+prefix.gsub(/initd/,"")
   when "cupsd"
-    file = "/etc/cups/cupd.conf"
+    file = "/etc/cups/cupsd.conf"
+  when "cups"
+    file = "/etc/cups/client.conf"
   when /skel/
     file = handle_skel_configfile(prefix)
   when "umask"
@@ -1127,9 +1129,13 @@ end
 # Handle perms type
 
 def handle_perms(kernel,modname,type,file_info,os_distro,os_version)
-  if file_info[3] =~ /configfile/
-    type    = file_info[3].gsub(/configfile/,"")
-    fs_item = get_config_file(kernel,modname,type,file_info,os_distro,os_version)
+  if file_info[3] =~ /configfile|init|initd/
+    if file_info[3] =~ /^[configfile|init|initd]$/
+      fs_item = get_config_file(kernel,modname,type,file_info,os_distro,os_version)
+    else
+      type    = file_info[3].gsub(/configfile|initd|init/,"")
+      fs_item = get_config_file(kernel,modname,type,file_info,os_distro,os_version)
+    end
   else
     fs_item = file_info[3..-1]
     fs_item = "/"+fs_item.join("/")
@@ -2073,7 +2079,7 @@ if file_name !~ /template|operatingsystemupdate/ and get_fact == "yes"
           fact = handle_sudo(kernel,modname,type,file_info,os_distro,os_version)
         when "ftpd"
           fact = handle_ftpd(kernel,modname,type,file_info,os_distro,os_version)
-        when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|cups$|apache$|network|xscreensaver|ftpaccess$|proftpd$|vsftpd$|gdmbanner$|gdm$|gdminit$|^rc$|^su$|systemauth$|commonauth$|fstab$|rmmount$|pam$|pamsshd$|pamgdmautologin$|sudoers$|sendmailcf$|skel$|cupsd$/
+        when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|cups$|apache$|network|xscreensaver|ftpaccess$|proftpd$|vsftpd$|gdmbanner$|gdm$|gdminit$|^rc$|^su$|systemauth$|commonauth$|fstab$|rmmount$|pam$|pamsshd$|pamgdmautologin$|sudoers$|sendmailcf$|skel$|cupsd$|init$|initd$/
           if file_info[-1] != type
             fact = handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
           else

@@ -291,4 +291,6 @@
 # Fixed pam types
 # 1.4.8: Tue Aug  5 06:16:04 EDT 2014
 # Added cupsd type
+# 1.4.9: Wed  6 Aug 2014 07:11:03 EST
+# Improved perms type
 
