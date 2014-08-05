@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.4.6
+# Version:      1.4.7
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -875,12 +875,12 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
   when /pam/
     if kernel == "SunOS"
       if os_version =~ /^11/
-        file = "/etc/pam.d"+prefix.gsub(/pam/,"")
+        file = "/etc/pam.d/"+prefix.gsub(/pam/,"")
       else
         file = "/etc/pam.conf"
       end
     else
-      file = "/etc/pam.d"+prefix.gsub(/pam/,"")
+      file = "/etc/pam.d/"+prefix.gsub(/pam/,"")
     end
   when /sshd/
     if File.directory?("/etc/ssh")

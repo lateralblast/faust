@@ -287,4 +287,6 @@
 # Updated fstab type
 # 1.4.6: Tue  5 Aug 2014 08:25:31 EST
 # Added skel types
+# 1.4.7: Tue  5 Aug 2014 11:22:49 EST
+# Fixed pam types
 
