@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.4.7
+# Version:      1.4.8
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -757,6 +757,8 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     else
       file = "/etc/sysconfig/init"
     end
+  when "cupsd"
+    file = "/etc/cups/cupd.conf"
   when /skel/
     file = handle_skel_configfile(prefix)
   when "umask"
@@ -2071,7 +2073,7 @@ if file_name !~ /template|operatingsystemupdate/ and get_fact == "yes"
           fact = handle_sudo(kernel,modname,type,file_info,os_distro,os_version)
         when "ftpd"
           fact = handle_ftpd(kernel,modname,type,file_info,os_distro,os_version)
-        when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|cups$|apache$|network|xscreensaver|ftpaccess$|proftpd$|vsftpd$|gdmbanner$|gdm$|gdminit$|^rc$|^su$|systemauth$|commonauth$|fstab$|rmmount$|pam$|pamsshd$|pamgdmautologin$|sudoers$|sendmailcf$|skel$/
+        when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|cups$|apache$|network|xscreensaver|ftpaccess$|proftpd$|vsftpd$|gdmbanner$|gdm$|gdminit$|^rc$|^su$|systemauth$|commonauth$|fstab$|rmmount$|pam$|pamsshd$|pamgdmautologin$|sudoers$|sendmailcf$|skel$|cupsd$/
           if file_info[-1] != type
             fact = handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
           else

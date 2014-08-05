@@ -289,4 +289,6 @@
 # Added skel types
 # 1.4.7: Tue  5 Aug 2014 11:22:49 EST
 # Fixed pam types
+# 1.4.8: Tue Aug  5 06:16:04 EDT 2014
+# Added cupsd type
 
