@@ -1941,10 +1941,10 @@ end
 
 # Debug
 
-debug_mode    = "yes"
-debug_type    = "perms"
-debug_subtype = "initfile"
-debug_addtype = "cups"
+debug_mode    = "no"
+debug_type    = ""
+debug_subtype = ""
+debug_addtype = ""
 
 if file_name =~ /_chsec_/
   file_name = file_name.gsub(/_chsec_/,"_lssec_")
