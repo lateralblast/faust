@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.5.0
+# Version:      1.5.1
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -82,9 +82,9 @@ def handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
         case type
         when /rmmount|pam|login|gdminit|auditrules|limits/
           fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}'")
-        when /sshd|apache|init|umask/
+        when /ssh|apache|init|umask/
           fact = Facter::Util::Resolution.exec("cat #{file} |grep -v '^#' |grep '#{param}' |grep -v '#{param}[A-z,0-9]' |awk '{print $2}'")
-          if type == "sshd"
+          if type == "sshd" or type == "ssh"
             if fact !~ /[A-z]|[0-9]/
               fact = Facter::Util::Resolution.exec("cat #{file} |grep '#{param}' |grep -v '#{param}[A-z,0-9]' |awk '{print $2}' |head -1")
             end
@@ -915,11 +915,17 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     else
       file = "/etc/pam.d/"+prefix.gsub(/pam/,"")
     end
-  when /sshd/
+  when "sshd"
     if File.directory?("/etc/ssh")
       file = "/etc/ssh/sshd_config"
     else
       file = "/etc/sshd_config"
+    end
+  when "ssh"
+    if File.directory?("/etc/ssh")
+      file = "/etc/ssh/ssh_config"
+    else
+      file = "/etc/ssh_config"
     end
   when /grub/
     if kernel == "SunOS"
@@ -2129,7 +2135,7 @@ if file_name !~ /template|operatingsystemupdate/ and get_fact == "yes"
           fact = handle_sudo(kernel,modname,type,file_info,os_distro,os_version)
         when "ftpd"
           fact = handle_ftpd(kernel,modname,type,file_info,os_distro,os_version)
-        when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|cups$|apache$|network|xscreensaver|ftpaccess$|proftpd$|vsftpd$|gdmbanner$|gdm$|gdminit$|^rc$|^su$|systemauth$|commonauth$|fstab$|rmmount$|pam$|pamsshd$|pamgdmautologin$|sudoers$|sendmailcf$|skel$|cupsd$/
+        when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|cups$|apache$|network|xscreensaver|ftpaccess$|proftpd$|vsftpd$|gdmbanner$|gdm$|gdminit$|^rc$|^su$|systemauth$|commonauth$|fstab$|rmmount$|pam$|pamsshd$|pamgdmautologin$|sudoers$|sendmailcf$|skel$|cupsd$|sshd$/
           if file_info[-1] != type
             fact = handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
           else
