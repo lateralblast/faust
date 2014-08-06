@@ -740,10 +740,10 @@ def handle_initfile(kernel,type,file_info,os_distro,os_version)
     end
   end
   test_file = "/etc/init.d/"+prefix
-  if File.exists?(test_file)
+  if File.exist?(test_file)
     file = test_file
   else
-    file "file does not exist"
+    file = "file does not exist"
   end
   return file
 end
@@ -1174,14 +1174,18 @@ def handle_perms(kernel,modname,type,file_info,os_distro,os_version)
   if !fs_item
     fact = "file does not exist"
   else
-    if File.exist?(fs_item)
-      mode    = File.stat(fs_item).mode
-      mode    = sprintf("%o",mode)[-4..-1]
-      uid     = File.stat(fs_item).uid.to_s
-      gid     = File.stat(fs_item).gid.to_s
-      user    = %x[cat /etc/passwd |awk -F: '{if ($3 == #{uid}) print $1}'].chomp
-      group   = %x[cat /etc/group |awk -F: '{if ($3 == #{gid}) print $1}'].chomp
-      fact    = mode+","+user+","+group
+    if fs_item =~ /\//
+      if File.exist?(fs_item)
+        mode    = File.stat(fs_item).mode
+        mode    = sprintf("%o",mode)[-4..-1]
+        uid     = File.stat(fs_item).uid.to_s
+        gid     = File.stat(fs_item).gid.to_s
+        user    = %x[cat /etc/passwd |awk -F: '{if ($3 == #{uid}) print $1}'].chomp
+        group   = %x[cat /etc/group |awk -F: '{if ($3 == #{gid}) print $1}'].chomp
+        fact    = mode+","+user+","+group
+      else
+        fact = "file does not exist"
+      end
     else
       fact = "file does not exist"
     end
@@ -1937,10 +1941,10 @@ end
 
 # Debug
 
-debug_mode    = "no"
-debug_type    = ""
-debug_subtype = ""
-debug_addtype = ""
+debug_mode    = "yes"
+debug_type    = "perms"
+debug_subtype = "initfile"
+debug_addtype = "cups"
 
 if file_name =~ /_chsec_/
   file_name = file_name.gsub(/_chsec_/,"_lssec_")
@@ -2155,8 +2159,10 @@ if file_name !~ /template|operatingsystemupdate/ and get_fact == "yes"
           fact = handle_services(kernel,type,os_distro,os_version)
         when /duplicate/
           fact = handle_duplicate(type,file_info)
-        when /configfile|initfile/
+        when /configfile/
           fact = handle_configfile(kernel,type,file_info,os_distro,os_version)
+        when /initfile/
+          fact = handle_initfile(kernel,type,file_info,os_distro,os_version)
         when /crontabfile/
           fact = handle_crontabfile(kernel,type,file_info)
         when "pam"
