@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.4.9
+# Version:      1.5.0
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -271,14 +271,14 @@ def handle_freebsd(kernel,modname,type,file_info,fact)
   return fact
 end
 
-# Get conig file
+# Get config file
 
 def get_config_file(kernel,modname,type,file_info,os_distro,os_version)
-  file = type+"configfile"
-  file = modname+"_"+kernel.downcase+"_"+file
-  file = Facter.value(file)
-  if file !~ /[A-z]/
+  if file_info.to_s =~ /configfile/
     file = handle_configfile(kernel,type,file_info,os_distro,os_version)
+  end
+  if file_info.to_s =~ /initfile/
+    file = handle_initfile(kernel,type,file_info,os_distro,os_version)
   end
   if !file
     file = "file does not exist"
@@ -723,16 +723,49 @@ def handle_skel_configfile(prefix)
   return file
 end
 
+# handle init file
+
+def handle_initfile(kernel,type,file_info,os_distro,os_version)
+  if type == "perms"
+    if file_info[3] == "initfile"
+      prefix = file_info[4..-1].join("_")
+    else
+      prefix = file_info[3].gsub(/initfile/,"")
+    end
+  else
+    if type == "initfile"
+      prefix = file_info[3..-1].join("_")
+    else
+      prefix = type.gsub(/initfile/,"")
+    end
+  end
+  test_file = "/etc/init.d/"+prefix
+  if File.exists?(test_file)
+    file = test_file
+  else
+    file "file does not exist"
+  end
+  return file
+end
+
 # Handle configfile type
 
 def handle_configfile(kernel,type,file_info,os_distro,os_version)
-  if type == "configfile" or type == "initfile"
-    prefix = file_info[3..-1].join("_")
+  if type == "perms"
+    if file_info[3] == "configfile"
+      prefix = file_info[4..-1].join("_")
+    else
+      prefix = file_info[3].gsub(/configfile/,"")
+    end
   else
-    prefix = type.gsub(/configfile|initfile/,"")
+    if type == "configfile"
+      prefix = file_info[3..-1].join("_")
+    else
+      prefix = type.gsub(/configfile/,"")
+    end
   end
   if kernel =~ /Darwin|FreeBSD/
-    if type =~ /syslog/
+    if prefix =~ /syslog/
       prefix = "newsyslog"
     end
   end
@@ -761,8 +794,6 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     file = "/etc/cups/client.conf"
   when /skel/
     file = handle_skel_configfile(prefix)
-  when "umask"
-    file = "/etc/init.d/umask"
   when "syslogd"
     file = "/etc/default/syslogd"
   when "keyserv"
@@ -922,8 +953,10 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     file = "/etc/hosts.allow"
   when /hostsdeny/
     file = "/etc/hosts.deny"
-  when /sendmailcf/
+  when "sendmailcf"
     file = "/etc/mail/sendmail.cf"
+  when "sendmail"
+    file = "/etc/default/sendmail"
   when /^rc$|rcconf/
     file = "/etc/rc.conf"
   end
@@ -1072,16 +1105,16 @@ end
 def handle_installedpackages(kernel,os_distro,os_version)
   if kernel == "SunOS"
     if os_version =~ /11/
-      fact = %x[pkg info -l |egrep 'Name:|Version:' |awk '{print $2}'].gsub(/\s+VERSION:\s+/,":").gsub(/\s+PKGINST:\s+/,"")
+      fact = %x[pkg info -l |egrep 'Name:|Version:' |awk '{print $1$2}'].gsub(/\nVersion:\s+/,":").gsub(/\nName:\s+/,",")
     else
-      fact = %x[pkginfo -l |egrep 'PKGINST:|VERSION:' |awk '{print $2}'].gsub(/\s+VERSION:\s+/,":").gsub(/\s+PKGINST:\s+/,"")
+      fact = %x[pkginfo -l |egrep 'PKGINST:|VERSION:' |awk '{print $1$2}'].gsub(/\nVERSION:\s+/,":").gsub(/\nPKGINST:\s+/,",")
     end
   end
   if kernel == "Linux"
     if os_distro =~ /Ubuntu|Debian/
       fact = %x[dpkg -l |awk '{print $2}']
     else
-      fact = %x[rpm -qa]
+      fact = %x[rpm -qai |egrep '^Name|^Version' |awk -F ':' '{print $1$2}'].gsub(/\nVersion\s+/,":").gsub(/\nName\s+/,",")
     end
   end
   if kernel == "Darwin"
@@ -1128,11 +1161,11 @@ end
 
 def handle_perms(kernel,modname,type,file_info,os_distro,os_version)
   if file_info[3] =~ /configfile|initfile/
-    if file_info[3] =~ /^[configfile|initfile]$/
-      fs_item = get_config_file(kernel,modname,type,file_info,os_distro,os_version)
-    else
-      type    = file_info[3].gsub(/configfile|initfile/,"")
-      fs_item = get_config_file(kernel,modname,type,file_info,os_distro,os_version)
+    if file_info[3] =~ /configfile/
+      fs_item = handle_configfile(kernel,type,file_info,os_distro,os_version)
+    end
+    if file_info[3] =~ /initfile/
+      fs_item = handle_initfile(kernel,type,file_info,os_distro,os_version)
     end
   else
     fs_item = file_info[3..-1]
@@ -1907,6 +1940,7 @@ end
 debug_mode    = "no"
 debug_type    = ""
 debug_subtype = ""
+debug_addtype = ""
 
 if file_name =~ /_chsec_/
   file_name = file_name.gsub(/_chsec_/,"_lssec_")
@@ -1918,6 +1952,9 @@ f_kernel  = file_info[1]
 type      = file_info[2]
 if file_info[3]
   subtype = file_info[3]
+end
+if file_info[4]
+  addtype = file_info[4]
 end
 
 if debug_mode
@@ -1932,7 +1969,15 @@ if debug_mode
               if subtype != debug_subtype
                 get_fact ="no"
               else
-                get_fact = "yes"
+                if debug_addtype =~ /[A-z]/
+                  if addtype != debug_addtype
+                    get_fact
+                  else
+                    get_fact = "yes"
+                  end
+                else
+                  get_fact = "yes"
+                end
               end
             else
               get_fact = "yes"
@@ -1988,6 +2033,9 @@ if file_name !~ /template|operatingsystemupdate/ and get_fact == "yes"
       puts "DEBUG: TYPE:    "+type
       if subtype
         puts "DEBUG: SUBTYPE: "+subtype
+      end
+      if addtype
+        puts "DEBUG: ADDTYPE: "+addtype
       end
     end
     if f_kernel == "all"

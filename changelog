@@ -293,4 +293,6 @@
 # Added cupsd type
 # 1.4.9: Wed  6 Aug 2014 07:11:03 EST
 # Improved perms type
+# 1.5.0: Wed  6 Aug 2014 16:16:13 EST
+# Improved handling of configfile and initfile when used with perms
 
