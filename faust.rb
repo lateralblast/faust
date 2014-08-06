@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.5.1
+# Version:      1.5.2
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -274,11 +274,15 @@ end
 # Get config file
 
 def get_config_file(kernel,modname,type,file_info,os_distro,os_version)
-  if file_info.to_s =~ /configfile/
+  if file_info.to_s =~ /configfile|initfile/
+    if file_info.to_s =~ /configfile/
+      file = handle_configfile(kernel,type,file_info,os_distro,os_version)
+    end
+    if file_info.to_s =~ /initfile/
+      file = handle_initfile(kernel,type,file_info,os_distro,os_version)
+    end
+  else
     file = handle_configfile(kernel,type,file_info,os_distro,os_version)
-  end
-  if file_info.to_s =~ /initfile/
-    file = handle_initfile(kernel,type,file_info,os_distro,os_version)
   end
   if !file
     file = "file does not exist"
@@ -320,7 +324,7 @@ end
 
 def handle_linux(kernel,modname,type,file_info,os_distro,fact,os_version)
   case type
-  when /avahi$|yum$|sysctl$|selinux$|modprobe$|rclocal$|rc.local$/
+  when /avahi$|yum$|sysctl$|selinux$|modprobe$|rclocal$|rc.local$|pamsystemauth$/
     fact = handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
   when "prelinkstatus"
     fact = handle_linux_prelink_status(kernel,modname,type,file_info,os_distro,os_version)
@@ -788,6 +792,8 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     else
       file = "/etc/sysconfig/init"
     end
+  when "yum"
+    file = "/etc/yum.conf"
   when "cupsd"
     file = "/etc/cups/cupsd.conf"
   when "cups"

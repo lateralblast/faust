@@ -297,4 +297,6 @@
 # Improved handling of configfile and initfile when used with perms
 # 1.5.1: Wed  6 Aug 2014 17:00:27 EST
 # Improved ssh and sshd types
+# 1.5.2: Thu  7 Aug 2014 06:33:16 EST
+# Fixed file and parameter handling
 
