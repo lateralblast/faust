@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.5.2
+# Version:      1.5.4
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -42,8 +42,8 @@ require 'rexml/document'
 
 # Get file name for processing
 
-file_name = __FILE__
-file_name = File.basename(file_name,".*")
+full_name = __FILE__
+file_name = File.basename(full_name,".*")
 
 # Doing file system searches takes time
 # Only enable it if it's needed
@@ -99,7 +99,11 @@ def handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
           end
         end
       end
+    else
+      fact = file
     end
+  else
+    fact = file
   end
   return fact
 end
@@ -1631,7 +1635,7 @@ def handle_sudo(kernel,modname,type,file_info,os_distro,os_version)
   param = file_info[3]
   if file
     if File.exist?(file)
-      fact = Facter::Util::Resolution.exec("cat #{file} |grep #{param}")
+      fact = Facter::Util::Resolution.exec("cat #{file} |grep '#{param}'")
     end
   end
   return fact
@@ -2017,7 +2021,7 @@ end
 
 # Main code
 
-if file_name !~ /template|operatingsystemupdate/ and get_fact == "yes"
+if file_name !~ /template|operatingsystemupdate|_info_/ and get_fact == "yes"
   kernel = Facter.value("kernel")
   if f_kernel != "all"
     if f_kernel =~ /osx|darwin/
@@ -2206,20 +2210,37 @@ else
     os_version = Facter.value("kernelrelease")
     kernel     = Facter.value("kernel")
     Facter.add("operatingsystemupdate") do
-      if $kernel == "SunOS"
-        case os_version
-        when /^11/
-          fact = Facter::Util::Resolution.exec("cat /etc/release |grep Solaris |awk '{print $3}' |cut -f2 -d'.'`")
-        when /^10/
-          fact = Facter::Util::Resolution.exec("cat /etc/release |grep Solaris |awk '{print $5}' |cut -f2 -d'_' |sed 's/[A-z]//g'")
-        else
-          fact = Facter::Util::Resolution.exec("cat /etc/release |grep Solaris |awk '{print $4}' |cut -f2 -d'_' |sed 's/[A-z]//g'")
+      setcode do
+        if $kernel == "SunOS"
+          case os_version
+          when /^11/
+            fact = Facter::Util::Resolution.exec("cat /etc/release |grep Solaris |awk '{print $3}' |cut -f2 -d'.'")
+          when /^10/
+            fact = Facter::Util::Resolution.exec("cat /etc/release |grep Solaris |awk '{print $5}' |cut -f2 -d'_' |sed 's/[A-z]//g'")
+          else
+            fact = Facter::Util::Resolution.exec("cat /etc/release |grep Solaris |awk '{print $4}' |cut -f2 -d'_' |sed 's/[A-z]//g'")
+          end
         end
+        if $kernel == "Darwin"
+          fact = Facter.value("macosx_productversion_minor")
+        end
+        fact
       end
-      if $kernel == "Darwin"
-        fact = Facter.value("macosx_productversion_minor")
+    end
+  end
+  if file_name =~ /_info_/
+    base_dir  = File.dirname(full_name)
+    base_dir  = base_dir.gsub(/lib\/facter/,"manifests")
+    init_file = base_dir+"/"+file_info[2..-1].join("/")+"/init.pp"
+    Facter.add(file_name) do
+      setcode do
+        if File.exist?(init_file)
+          fact = Facter::Util::Resolution.exec("cat #{init_file} |grep '^#' |egrep -v 'fact:|::'")
+        else
+          fact = init_file
+        end
+        fact
       end
-      fact
     end
   end
 end

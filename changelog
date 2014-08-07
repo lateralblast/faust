@@ -299,4 +299,8 @@
 # Improved ssh and sshd types
 # 1.5.2: Thu  7 Aug 2014 06:33:16 EST
 # Fixed file and parameter handling
+# 1.5.3: Thu  7 Aug 2014 06:47:30 EST
+# Improved parameter value determination
+# 1.5.4: Thu  7 Aug 2014 10:46:08 EST
+# Added info type to print documentation at top of manifest if it exists
 
