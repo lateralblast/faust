@@ -303,4 +303,10 @@
 # Improved parameter value determination
 # 1.5.4: Thu  7 Aug 2014 10:46:08 EST
 # Added info type to print documentation at top of manifest if it exists
+# 1.5.5: Fri  8 Aug 2014 10:09:00 EST
+# Added oldusers type
+# 1.5.6: Fri  8 Aug 2014 13:09:21 EST
+# Fixed grep routines to work with gnu and non-gnu grep
+# 1.5.7: Fri  8 Aug 2014 14:59:45 EST
+# Removed Facter Resolution functions as they were not escaping characters correctly
 
