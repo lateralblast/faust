@@ -309,4 +309,6 @@
 # Fixed grep routines to work with gnu and non-gnu grep
 # 1.5.7: Fri  8 Aug 2014 14:59:45 EST
 # Removed Facter Resolution functions as they were not escaping characters correctly
+# 1.5.8: Sat  9 Aug 2014 14:04:55 EST
+# Added floppycdromfdi type
 

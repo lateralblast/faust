@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.5.7
+# Version:      1.5.8
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -329,7 +329,7 @@ end
 
 def handle_linux(kernel,modname,type,file_info,os_distro,fact,os_version)
   case type
-  when /avahi$|yum$|sysctl$|selinux$|modprobe$|rclocal$|rc.local$|pamsystemauth$/
+  when /avahi$|yum$|sysctl$|selinux$|modprobe$|rclocal$|rc.local$|pamsystemauth$|floppycdromfdi$/
     fact = handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
   when "prelinkstatus"
     fact = handle_linux_prelink_status(kernel,modname,type,file_info,os_distro,os_version)
@@ -796,6 +796,14 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
       file = "/etc/default/init"
     else
       file = "/etc/sysconfig/init"
+    end
+  when "floppycdromfdi"
+    if File.directory?("/usr/share/hal/fdi/95userpolicy")
+      file = "/usr/share/hal/fdi/95userpolicy/floppycdrom.fdi"
+    else
+      if File.directory?("/usr/share/hal/fdi/policy/20thirdparty")
+        file = "/usr/share/hal/fdi/policy/20thirdparty/floppycdrom.fdi"
+      end
     end
   when "prelink"
     file = "/etc/prelink.conf"
