@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.5.8
+# Version:      1.6.0
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -1019,7 +1019,7 @@ end
 def handle_services(kernel,type,os_distro,os_version)
   if type == "rctcpservices"
     if kernel == "AIX"
-      if File.exist("/etc/rc,tcpip")
+      if File.exist?("/etc/rc,tcpip")
         fact = %x[cat /etc/rc.tcpip |grep -v '^#' |awk '{print $2}']
       end
     end
@@ -1405,6 +1405,42 @@ def handle_inactivewheelusers(kernel)
   return fact
 end
 
+# Handle unused groups and gids
+
+def handle_unusedsystem_types(kernel,type)
+  unused_list = []
+  if type == "unusedgids"
+    if File.exist?("/etc/passwd") and File.exist?("/etc/group")
+      group_list = %x[cat /etc/group |cut -f3 -d:].split("\n")
+      gid_list   = %x[cat /etc/passwd |awk -F':' '{print $2":"$3}'].split(/\n|:/)
+      gid_list.each do |gid|
+        if !group_list.grep(/#{gid}/)
+          if !unused_list.grep(/#{gid}/)
+            unused_list.push(gid)
+          end
+        end
+      end
+    end
+  end
+  if type == "unusedgroups"
+    if File.exist?("/etc/passwd") and File.exist?("/etc/group")
+      group_list = %x[cat /etc/group |cut -f3 -d:].split("\n")
+      gid_list   = %x[cat /etc/passwd |awk -F':' '{print $2":"$3}'].split(/\n|:/)
+      group_list.each do |group|
+        if !gid_list.grep(/#{group}/)
+          if !unused_list.grep(/#{gid}/)
+            unused_list.push(group)
+          end
+        end
+      end
+    end
+  end
+  if unused_list[0]
+    fact = unused_list.join(",")
+  end
+  return fact
+end
+
 # Handle invalid system types
 
 def handle_invalidsystem_types(kernel,type)
@@ -1418,12 +1454,16 @@ def handle_invalidsystem_types(kernel,type)
       (user_name,user_uid,user_home) = user_info.split(/:/)
       if user_name.match(/[A-z]/)
         if !File.directory?(user_home)
-          invalid_list.push(user_info)
+          if !invalid_list.grep(/#{user_info}/)
+            invalid_list.push(user_info)
+          end
         else
           dir_uid = File.stat(user_home).uid
           if user_home != "/"
             if dir_uid != user_uid
-              invalid_list.push(user_info)
+              if !invalid_list.grep(/#{user_info}/)
+                invalid_list.push(user_info)
+              end
             end
           end
         end
@@ -1440,10 +1480,14 @@ def handle_invalidsystem_types(kernel,type)
       if user_name.match(/[A-z]/)
         if user_home
           if !File.directory?(user_home)
-            invalid_list.push(user_name)
+            if !invalid_list.grep(/#{user_name}/)
+              invalid_list.push(user_name)
+            end
           end
         else
-          invalid_list.push(user_name)
+          if !invalid_list.grep(/#{user_name}/)
+            invalid_list.push(user_name)
+          end
         end
       end
     end
@@ -1459,7 +1503,9 @@ def handle_invalidsystem_types(kernel,type)
         if user_name.match(/[A-z]/)
           if user_shell
             if !File.exist?(user_shell)
-              invalid_list.push(user_name)
+              if !invalid_list.grep(/#{user_name}/)
+                invalid_list.push(user_name)
+              end
             end
           end
         end
@@ -1480,7 +1526,9 @@ def handle_invalidsystem_types(kernel,type)
       shell_list = shell_list.split("\n")
       shell_list.each do |shell|
         if !File.exist?(shell)
-          invalid_list.push(shell)
+          if !invalid_list.grep(/#{shell}/)
+            invalid_list.push(shell)
+          end
         end
       end
     end
@@ -2016,6 +2064,31 @@ def handle_homeperms()
   return fact
 end
 
+# Handle partition
+
+def handle_partition(file_info,kernel)
+  if kernel == "SunOS"
+    fstab = "/etc/vfstab"
+  else
+    fstab = "/etc/fstab"
+  end
+  part = file_info[3..-1].join("/")
+  if part == "root"
+    part = "/"
+  else
+    part = "/"+part
+  end
+  if File.exist?(fstab)
+    fact = %x[cat #{fstab} | grep '[[:space:]]#{part}[[:space:]]' |awk '{print $1}']
+  else
+    fact = "no partition"
+  end
+  if !fact
+    fact = "no partition"
+  end
+  return fact
+end
+
 # Find old users that have not logged in
 
 def handle_oldusers()
@@ -2167,6 +2240,8 @@ if file_name !~ /template|operatingsystemupdate|_info_/ and get_fact == "yes"
           end
         end
         case type
+        when "partition"
+          fact = handle_partition(file_info,kernel)
         when "oldusers"
           fact - handle_oldusers()
         when "homeperms"
@@ -2239,6 +2314,8 @@ if file_name !~ /template|operatingsystemupdate|_info_/ and get_fact == "yes"
           fact = handle_sulogin(kernel)
         when /invalid/
           fact = handle_invalidsystem_types(kernel,type)
+        when /unused/
+          fact = handle_unusedsystem_types(kernel,type)
         when "exec"
           fact = handle_exec(file_info)
         when "mtime"

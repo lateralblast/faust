@@ -311,4 +311,8 @@
 # Removed Facter Resolution functions as they were not escaping characters correctly
 # 1.5.8: Sat  9 Aug 2014 14:04:55 EST
 # Added floppycdromfdi type
+# 1.5.9: Sat  9 Aug 2014 16:51:43 EST
+# Added partition type
+# 1.6.0: Sun 10 Aug 2014 15:31:46 EST
+# Added unusedgids and unsedgroups types
 
