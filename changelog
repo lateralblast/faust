@@ -315,4 +315,8 @@
 # Added partition type
 # 1.6.0: Sun 10 Aug 2014 15:31:46 EST
 # Added unusedgids and unsedgroups types
+# 1.6.1: Sun 10 Aug 2014 20:21:05 EST
+# Fixed selinux type
+# 1.6.2: Mon 11 Aug 2014 08:46:00 EST
+# Fixed return of parameter or content when file doesn't exist
 

@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.6.0
+# Version:      1.6.2
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -83,27 +83,27 @@ def handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
         when /rmmount|pam|login|gdminit|auditrules|limits/ # Files where we need the whole line
           fact = %x[cat #{file} |grep -v '^#' |grep '#{param}'].gsub("\n","")
         when /ssh|apache|init|umask|cups/ # File where parameter is separated from value by space
-          fact = %x[cat #{file} |grep -v '^#' |grep '#{param}' |grep -v '#{param}[a-Z,0-9]' |awk '{print $2}'].gsub("\n","")
+          fact = %x[cat #{file} |grep -v '^#' |grep '#{param} ' |grep -v '#{param}[a-Z,0-9]' |awk '{print $2}'].gsub("\n","")
           if type == "sshd" or type == "ssh" # With ssh fetch commented out default if we return no value
             if fact !~ /[A-z]|[0-9]/
-              fact = %x[cat #{file} |grep '#{param}' |grep -v '#{param}[a-Z,0-9]' |awk '{print $2}' |head -1].gsub("\n","")
+              fact = %x[cat #{file} |grep '#{param} ' |grep -v '#{param}[a-Z,0-9]' |awk '{print $2}' |head -1].gsub("\n","")
             end
           end
         when /aliases|event|xscreensaver/ # Foe files where parameter is separated from value by a colon
           fact = %x[cat #{file} |grep -v '^#' |grep '#{param}' |grep -v '#{param}[a-Z,0-9]' |cut -f2 -d: |sed 's/ //g'].gsub("\n","")
         else # Otherwise assume the separator is an equals
           if file =~ /sudoers/ and kernel == "Darwin"
-            fact = %x[sudo sh -c \"cat #{file} |grep -v '^#' |grep '#{param}' |grep -v '#{param}[a-Z,0-9]' |cut -f2 -d= |sed 's/ //g'\"].gsub("\n","")
+            fact = %x[sudo sh -c \"cat #{file} |grep -v '^#' |egrep '#{param}=|#{param} =' |grep -v '#{param}[a-Z,0-9]' |cut -f2 -d= |sed 's/ //g'\"].gsub("\n","")
           else
-            fact = %x[cat #{file} |grep -v '^#' |grep '#{param}' |grep -v '#{param}[a-Z,0-9]' |cut -f2 -d= |sed 's/ //g'].gsub("\n","")
+            fact = %x[cat #{file} |grep -v '^#' |egrep '#{param}=|#{param} =' |grep -v '#{param}[a-Z,0-9]' |cut -f2 -d= |sed 's/ //g'].gsub("\n","")
           end
         end
       end
     else
-      fact = file
+      fact = "file does not exist"
     end
   else
-    fact = file
+    fact = "file does not exist"
   end
   return fact
 end
@@ -779,12 +779,12 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     end
   end
   case type
-  when /selinux/
-    prefix = "config"
   when /apache/
     prefix = "httpd"
   end
   case prefix
+  when "selinux"
+    file = "/etc/selinux/config"
   when "fstab"
     if kernel == "SunOS"
       file = "/etc/vfstab"
@@ -1759,18 +1759,20 @@ end
 # Handle file content
 
 def handle_file_content(kernel,type,file_info,os_distro,os_version)
-  file_name = handle_configfile(kernel,type,file_info,os_distro,os_version)
+  file = handle_configfile(kernel,type,file_info,os_distro,os_version)
   if kernel == "Darwin"
-    command = "sudo cat #{file_name}"
+    command = "sudo cat #{file}"
   else
-    command = "cat #{file_name}"
+    command = "cat #{file}"
   end
-  if File.exist?(file_name)
-    if file_name.match(/fstab/)
+  if File.exist?(file)
+    if file.match(/fstab/)
       fact = %x[#{command} |grep "[a-Z]" |grep -v "^#"]
     else
       fact = %x[#{command}]
     end
+  else
+    fact = "file does not exist"
   end
   return fact
 end
