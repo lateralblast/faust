@@ -321,4 +321,6 @@
 # Fixed return of parameter or content when file doesn't exist
 # 1.6.3: Mon 11 Aug 2014 13:29:42 EST
 # Improved crontab handling
+# 1.6.4: Mon 11 Aug 2014 23:16:37 EST
+# Dropped kernel dependence in file name
 

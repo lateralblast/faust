@@ -39,7 +39,7 @@ a directory list to see all the custom facts and their names.
 Faust can be modified as needed, but the default file naming format is along
 the following lines:
 
-MODULENAME_KERNEL_TYPE_SUBTYPE_PARAMETER
+MODULENAME_TYPE_SUBTYPE_PARAMETER
 
 This can be expanded as needed, and you can modify it accordingly. You could
 choose to remove the module component. I use it so I can easily keep track
@@ -67,7 +67,7 @@ name by the template.
 For example to create a custom fact that lists all installed packages:
 
 ```
-ln -s faust.rb MODULE_all_installedpackages.rb
+ln -s faust.rb MODULE_installedpackages.rb
 ```
 
 The template has code for determining the installed packages on various
@@ -85,15 +85,15 @@ Example Symlinks
 
 ```
 $ ls -l
-lrwxr-xr-x  1 spindler  staff    8 24 Jul 19:05 pulsar_linux_avahi_disable-user-service-publishing.rb -> faust.rb
-lrwxr-xr-x  1 spindler  staff    8 24 Jul 19:05 pulsar_linux_avahi_disallow-other-stacks.rb -> faust.rb
-lrwxr-xr-x  1 spindler  staff    8 24 Jul 19:05 pulsar_linux_avahi_publish-address.rb -> faust.rb
-lrwxr-xr-x  1 spindler  staff    8 24 Jul 19:05 pulsar_linux_avahi_publish-binfo.rb -> faust.rb
-lrwxr-xr-x  1 spindler  staff    8 24 Jul 19:05 pulsar_linux_avahi_publish-domain.rb -> faust.rb
-lrwxr-xr-x  1 spindler  staff    8 24 Jul 19:05 pulsar_linux_avahi_publish-workstation.rb -> faust.rb
-lrwxr-xr-x  1 spindler  staff    8 24 Jul 19:05 pulsar_linux_avahiconfigfile.rb -> faust.rb
-lrwxr-xr-x  1 spindler  staff    8 30 Jul 22:01 pulsar_linux_commonauth_nullok.rb -> faust.rb
-lrwxr-xr-x  1 spindler  staff    8 30 Jul 22:01 pulsar_linux_commonauth_remember.rb -> faust.rb
+lrwxr-xr-x  1 spindler  staff    8 24 Jul 19:05 pulsar_avahi_disable-user-service-publishing.rb -> faust.rb
+lrwxr-xr-x  1 spindler  staff    8 24 Jul 19:05 pulsar_avahi_disallow-other-stacks.rb -> faust.rb
+lrwxr-xr-x  1 spindler  staff    8 24 Jul 19:05 pulsar_avahi_publish-address.rb -> faust.rb
+lrwxr-xr-x  1 spindler  staff    8 24 Jul 19:05 pulsar_avahi_publish-binfo.rb -> faust.rb
+lrwxr-xr-x  1 spindler  staff    8 24 Jul 19:05 pulsar_avahi_publish-domain.rb -> faust.rb
+lrwxr-xr-x  1 spindler  staff    8 24 Jul 19:05 pulsar_avahi_publish-workstation.rb -> faust.rb
+lrwxr-xr-x  1 spindler  staff    8 24 Jul 19:05 pulsar_avahiconfigfile.rb -> faust.rb
+lrwxr-xr-x  1 spindler  staff    8 30 Jul 22:01 pulsar_commonauth_nullok.rb -> faust.rb
+lrwxr-xr-x  1 spindler  staff    8 30 Jul 22:01 pulsar_commonauth_remember.rb -> faust.rb
 ```
 
 Example Output
@@ -102,23 +102,23 @@ Example Output
 Some example output on Linux:
 
 ```
-pulsar_linux_configfile_rclocal => /etc/rc.d/local
-pulsar_linux_configfile_sendmailcf => /etc/mail/sendmail.cf
-pulsar_linux_configfile_sshd => /etc/ssh/sshd_config
-pulsar_linux_configfile_sudoers => /etc/sudoers
-pulsar_linux_configfile_sysstat => /etc/default/sysstat
-pulsar_linux_nisgroupentries =>
-pulsar_linux_nispasswordentries =>
-pulsar_linux_ntp_options =>
-pulsar_linux_ntp_restrict_-6 =>
-pulsar_linux_ntp_restrict_default => restrict default nomodify notrap nopeer noquery
-pulsar_linux_pamcommonfigfile =>
-pulsar_linux_pampasswordauth_authfail =>
-pulsar_linux_perms_var_spool_cron => 0700,root,root
-pulsar_linux_postfix_inet_interfaces =>
-pulsar_linux_primarygid_root => 0
-pulsar_linux_rootenv_path => PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin
-pulsar_linux_samba_client =>
+pulsar_configfile_rclocal => /etc/rc.d/local
+pulsar_configfile_sendmailcf => /etc/mail/sendmail.cf
+pulsar_configfile_sshd => /etc/ssh/sshd_config
+pulsar_configfile_sudoers => /etc/sudoers
+pulsar_configfile_sysstat => /etc/default/sysstat
+pulsar_nisgroupentries =>
+pulsar_nispasswordentries =>
+pulsar_ntp_options =>
+pulsar_ntp_restrict_-6 =>
+pulsar_ntp_restrict_default => restrict default nomodify notrap nopeer noquery
+pulsar_pamcommonfigfile =>
+pulsar_pampasswordauth_authfail =>
+pulsar_perms_var_spool_cron => 0700,root,root
+pulsar_postfix_inet_interfaces =>
+pulsar_primarygid_root => 0
+pulsar_rootenv_path => PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin
+pulsar_samba_client =>
 ```
 
 Documentation
@@ -192,11 +192,11 @@ system parameters this gets tedious.
 Using the template a custom fact can be created by simply creating a symbolic link:
 
 ```
-ln -s faust.rb faust_darwin_defaults_com.apple.alf_globalstate.rb
+ln -s faust.rb faust_defaults_com.apple.alf_globalstate.rb
 ```
 
 It will then appear in the facter output:
 
 ```
-faust_darwin_defaults_com.apple.alf_globalstate => 0
+faust_defaults_com.apple.alf_globalstate => 0
 ```
