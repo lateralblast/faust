@@ -319,4 +319,6 @@
 # Fixed selinux type
 # 1.6.2: Mon 11 Aug 2014 08:46:00 EST
 # Fixed return of parameter or content when file doesn't exist
+# 1.6.3: Mon 11 Aug 2014 13:29:42 EST
+# Improved crontab handling
 

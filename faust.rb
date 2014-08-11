@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.6.2
+# Version:      1.6.3
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -1739,19 +1739,27 @@ end
 # Handle crontab file
 
 def handle_crontabfile(kernel,type,file_info)
-  if type == "crontabfile" or type == "crontab"
-    search_file = file_info[-1]
+  if type =~ /daily|hourly|monthly|weekly/
+    if type =~ /^cron/
+      search_file = file_info[-1]
+    else
+      search_file = type.split(/cron/)[0]
+    end
+    time = type.split(/cron/)[1].split(/file/)[0]
+    fact = "/etc/cron."+time+"/"+search_file
   else
-    search_file = type.gsub(/crontabfile/,"")
-    search_file = type.gsub(/crontab/,"")
-  end
-  if kernel == "Linux"
-    cron_dir = "/etc/cron.*/"
-    fact     = %x[find #{cron_dir} -name #{search_file}].gsub("\n","")
-  end
-  if kernel == "SunOS"
-    cron_dir = "/var/spool/cron/crontabs/"
-    fact     = cron_dir+search_file
+    if type == "crontabfile" or type == "crontab"
+      search_file = file_info[-1]
+    else
+      search_file = type.gsub(/crontabfile/,"")
+      search_file = type.gsub(/crontab/,"")
+    end
+    if kernel == "Linux"
+      cron_dir = "/var/spool/cron"
+    else
+      cron_dir = "/var/spool/cron/crontabs/"
+    end
+    fact = cron_dir+search_file
   end
   return fact
 end
@@ -2284,7 +2292,7 @@ if file_name !~ /template|operatingsystemupdate|_info_/ and get_fact == "yes"
           fact = handle_symlink(file_info)
         when /cron$/
           fact = handle_cron(kernel,type)
-        when "crontab"
+        when /crontab$|crondaily$|cronhourly$|cronweekly$|cronmonthly$/
           fact = handle_crontab(kernel,type,file_info)
         when /^nis/
           fact = handle_nis(kernel,type)
@@ -2340,7 +2348,7 @@ if file_name !~ /template|operatingsystemupdate|_info_/ and get_fact == "yes"
           fact = handle_configfile(kernel,type,file_info,os_distro,os_version)
         when /initfile/
           fact = handle_initfile(kernel,type,file_info,os_distro,os_version)
-        when /crontabfile/
+        when /crontabfile|crondailyfile|cronhourlyfile|cronweeklyfile|cronmonthlyfile/
           fact = handle_crontabfile(kernel,type,file_info)
         when "pam"
           fact = handle_pam(kernel,type,file_info,os_version)
