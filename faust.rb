@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.6.4
+# Version:      1.6.5
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -415,7 +415,7 @@ end
 
 def handle_darwin_spctl(file_info)
   param = file_info[2]
-  fact  = %x[/usr/bin/spctl --#{param}].gsub("\n","")
+  fact  = %x[/usr/sbin/spctl --#{param}].gsub("\n","")
   return fact
 end
 
@@ -782,11 +782,11 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
       prefix = "newsyslog"
     end
   end
-  case type
-  when /apache/
-    prefix = "httpd"
-  end
   case prefix
+  when "apache"
+    if kernel == "Darwin"
+      file = "/etc/apache2/httpd.conf"
+    end
   when "selinux"
     file = "/etc/selinux/config"
   when "fstab"
@@ -2118,11 +2118,13 @@ end
 
 def handle_oldusers()
   old_users = []
-  user_list = %x[cat /etc/passwd | grep -v '^#' |awk -F: '($1!="root" && $1!="sync" && $1!="shutdown" && $1!="halt" && $3<500 && $7!="/sbin/nologin" && $7!="/bin/false" ) {print $1}'].split("\n")
-  last_list = %x[last |grep '[#{$atoz}]' |awk '{print $1}'].split("\n")
-  user_list.each do |user|
-    if !last_list.grep(/#{user}/)
-      old_users.push(user)
+  if File.exist?("/etc/passwd")
+    user_list = %x[cat /etc/passwd | grep -v '^#' |awk -F: '($1!="root" && $1!="sync" && $1!="shutdown" && $1!="halt" && $3<500 && $7!="/sbin/nologin" && $7!="/bin/false" ) {print $1}'].split("\n")
+    last_list = %x[last |grep '[#{$atoz}]' |awk '{print $1}'].split("\n")
+    user_list.each do |user|
+      if !last_list.grep(/#{user}/)
+        old_users.push(user)
+      end
     end
   end
   if !old_users[0]
@@ -2225,7 +2227,9 @@ if file_name !~ /template|operatingsystemupdate|_info_/ and get_fact == "yes"
       puts "DEBUG: ADDTYPE: "+addtype
     end
   end
-  fact_name = file_name
+  fact_name = file_name.gsub(/\./,"_")
+  fact_name = fact_name.gsub(/:/,"_")
+  fact_name = fact_name.gsub(/,/,"_")
   if type == "launchctl"
     fact_name = fact_name.gsub(/\.plist/,"")
   end

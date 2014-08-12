@@ -323,4 +323,6 @@
 # Improved crontab handling
 # 1.6.4: Mon 11 Aug 2014 23:16:37 EST
 # Dropped kernel dependence in file name
+# 1.6.5: Tue 12 Aug 2014 11:50:08 EST
+# Changed fact names to better suit puppet
 
