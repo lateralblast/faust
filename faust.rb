@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.6.5
+# Version:      1.6.6
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -849,6 +849,8 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     file = "/usr/sadm/defadduser"
   when "sudoers"
     file = "/etc/sudoers"
+  when "sudoerswheel"
+    file = "/etc/sudoers.d/wheel"
   when "vfstab"
     file = "/etc/vfstab"
   when "limits"
@@ -2230,6 +2232,7 @@ if file_name !~ /template|operatingsystemupdate|_info_/ and get_fact == "yes"
   fact_name = file_name.gsub(/\./,"_")
   fact_name = fact_name.gsub(/:/,"_")
   fact_name = fact_name.gsub(/,/,"_")
+  fact_name = fact_name.gsub(/#/,"_")
   if type == "launchctl"
     fact_name = fact_name.gsub(/\.plist/,"")
   end
@@ -2312,7 +2315,7 @@ if file_name !~ /template|operatingsystemupdate|_info_/ and get_fact == "yes"
         fact = handle_sudo(kernel,modname,type,file_info,os_distro,os_version)
       when "ftpd"
         fact = handle_ftpd(kernel,modname,type,file_info,os_distro,os_version)
-      when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|cups$|apache$|network|xscreensaver|ftpaccess$|proftpd$|vsftpd$|gdmbanner$|gdm$|gdminit$|^rc$|^su$|systemauth$|commonauth$|fstab$|rmmount$|pam$|pamsshd$|pamgdmautologin$|sudoers$|sendmailcf$|skel$|cupsd$|sshd$/
+      when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|cups$|apache$|network|xscreensaver|ftpaccess$|proftpd$|vsftpd$|gdmbanner$|gdm$|gdminit$|^rc$|^su$|systemauth$|commonauth$|fstab$|rmmount$|pam$|pamsshd$|pamgdmautologin$|sudoers$|sendmailcf$|skel$|cupsd$|sshd$|sudoerswheel$/
         if file_info[-1] != type
           fact = handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
         else

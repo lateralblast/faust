@@ -325,4 +325,6 @@
 # Dropped kernel dependence in file name
 # 1.6.5: Tue 12 Aug 2014 11:50:08 EST
 # Changed fact names to better suit puppet
+# 1.6.6: Tue 12 Aug 2014 14:00:23 EST
+# Added sudoerswheel type
 
