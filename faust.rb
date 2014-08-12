@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.6.6
+# Version:      1.6.7
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -1989,6 +1989,8 @@ def handle_issue()
   file = "/etc/issue"
   if File.exist?(file)
     fact = %x[cat #{file}]
+  else
+    fact = ""
   end
   return fact
 end
@@ -2229,10 +2231,7 @@ if file_name !~ /template|operatingsystemupdate|_info_/ and get_fact == "yes"
       puts "DEBUG: ADDTYPE: "+addtype
     end
   end
-  fact_name = file_name.gsub(/\./,"_")
-  fact_name = fact_name.gsub(/:/,"_")
-  fact_name = fact_name.gsub(/,/,"_")
-  fact_name = fact_name.gsub(/#/,"_")
+  fact_name = file_name.gsub(/\.|:|,|#|-/,"_")
   if type == "launchctl"
     fact_name = fact_name.gsub(/\.plist/,"")
   end
