@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.6.7
+# Version:      1.6.8
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -52,7 +52,11 @@ $fs_search = "no"
 
 # Global declaration for A-z for different greps
 
-$atoz = ""
+if RUBY_PLATFORM.match(/linux/)
+  $atoz = "a-Z"
+else
+  $atoz = "A-z"
+end
 
 # Get the members of a group
 
@@ -764,7 +768,7 @@ end
 # Handle configfile type
 
 def handle_configfile(kernel,type,file_info,os_distro,os_version)
-  if type == "perms"
+  if type == "perms" or type == "content"
     if file_info[2] == "configfile"
       prefix = file_info[3..-1].join("_")
     else
@@ -829,6 +833,8 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     file = handle_skel_configfile(prefix)
   when "syslogd"
     file = "/etc/default/syslogd"
+  when "auditrules"
+    file = "/etc/audit/rules.d/audit.rules"
   when "keyserv"
     file = "/etc/default/keyserv"
   when "inetd"
@@ -1786,16 +1792,12 @@ end
 def handle_file_content(kernel,type,file_info,os_distro,os_version)
   file = handle_configfile(kernel,type,file_info,os_distro,os_version)
   if kernel == "Darwin"
-    command = "sudo cat #{file}"
+    command = "sudo cat '#{file}'"
   else
-    command = "cat #{file}"
+    command = "cat '#{file}'"
   end
   if File.exist?(file)
-    if file.match(/fstab/)
-      fact = %x[#{command} |grep "[#{$atoz}]" |grep -v "^#"]
-    else
-      fact = %x[#{command}]
-    end
+    fact = %x[#{command} |grep '[#{$atoz}]' |grep -v '^#']
   else
     fact = "file does not exist"
   end
@@ -2146,6 +2148,12 @@ debug_type    = ""
 debug_subtype = ""
 debug_addtype = ""
 
+if debug_mode == "no"
+  get_fact = "yes"
+else
+  get_fact = "no"
+end
+
 if file_name =~ /_chsec_/
   file_name = file_name.gsub(/_chsec_/,"_lssec_")
 end
@@ -2172,9 +2180,13 @@ if debug_mode
               if subtype != debug_subtype
                 get_fact ="no"
               else
-                if debug_addtype =~ /[A-z]/
-                  if addtype != debug_addtype
-                    get_fact
+                if debug_addtype
+                  if debug_addtype =~ /[A-z]/
+                    if addtype != debug_addtype
+                      get_fact = "no"
+                    else
+                      get_fact = "yes"
+                    end
                   else
                     get_fact = "yes"
                   end
@@ -2204,13 +2216,10 @@ end
 
 # Main code
 
-if file_name !~ /template|operatingsystemupdate|_info_/ and get_fact == "yes"
+if file_name !~ /faust|operatingsystemupdate|_info_/ and get_fact == "yes"
   kernel = Facter.value("kernel")
   if kernel == "Linux"
     os_distro = Facter.value("lsbdistid")
-    $atoz = "a-Z"
-  else
-    $atoz = "A-z"
   end
   if type =~ /pwpolicy|file|defaults|dscl|pmset/
     subtype   = file_info[2]
@@ -2252,6 +2261,8 @@ if file_name !~ /template|operatingsystemupdate|_info_/ and get_fact == "yes"
         end
       end
       case type
+      when "content"
+        fact = handle_file_content(kernel,type,file_info,os_distro,os_version)
       when "partition"
         fact = handle_partition(file_info,kernel)
       when "oldusers"
@@ -2376,44 +2387,60 @@ if file_name !~ /template|operatingsystemupdate|_info_/ and get_fact == "yes"
     end
   end
 else
-  if file_name =~ /operatingsystemupdate/
-    os_version = Facter.value("kernelrelease")
-    kernel     = Facter.value("kernel")
-    Facter.add("operatingsystemupdate") do
-      setcode do
-        if $kernel == "SunOS"
-          if File.exist?("/etc/release")
-            case os_version
-            when /^11/
-              fact = %x[cat /etc/release |grep Solaris |awk '{print $3}' |cut -f2 -d'.'].gsub("\n","")
-            when /^10/
-              fact = %x[cat /etc/release |grep Solaris |awk '{print $5}' |cut -f2 -d'_' |sed 's/[a-A]//g'].gsub("\n","")
-            else
-              fact = %x[cat /etc/release |grep Solaris |awk '{print $4}' |cut -f2 -d'_' |sed 's/[a-Z]//g'].gsub("\n","")
-            end
-          end
-        end
-        if $kernel == "Darwin"
-          fact = Facter.value("macosx_productversion_minor")
-        end
-        fact
+  if get_fact == "yes"
+    kernel = Facter.value("kernel")
+    if debug_mode == "yes" and file_name.match("_")
+      puts "DEBUG: === Debug Information ==="
+      puts "DEBUG: FACT:    "+file_name
+      puts "DEBUG: KERNEL:  "+kernel
+      puts "DEBUG: MODULE:  "+modname
+      puts "DEBUG: TYPE:    "+type
+      if subtype
+        puts "DEBUG: SUBTYPE: "+subtype
+      end
+      if addtype
+        puts "DEBUG: ADDTYPE: "+addtype
       end
     end
-  end
-  if file_name =~ /_info_/
-    free_mem  = Facter.value("memoryfree_mb")
-    if free_mem.to_i > 1000
-      base_dir  = File.dirname(full_name)
-      base_dir  = base_dir.gsub(/lib\/facter/,"manifests")
-      init_file = base_dir+"/"+file_info[2..-1].join("/")+"/init.pp"
-      Facter.add(file_name) do
+    if file_name =~ /operatingsystemupdate/
+      os_version = Facter.value("kernelrelease")
+      kernel     = Facter.value("kernel")
+      Facter.add("operatingsystemupdate") do
         setcode do
-          if File.exist?(init_file)
-            fact = %x[cat #{init_file} |grep '^#' |egrep -v 'fact:|::'].gsub("\n","")
-          else
-            fact = init_file
+          if kernel == "SunOS"
+            if File.exist?("/etc/release")
+              case os_version
+              when /^11/
+                fact = %x[cat /etc/release |grep Solaris |awk '{print $3}' |cut -f2 -d'.'].gsub("\n","")
+              when /^10/
+                fact = %x[cat /etc/release |grep Solaris |awk '{print $5}' |cut -f2 -d'_' |sed 's/[a-A]//g'].gsub("\n","")
+              else
+                fact = %x[cat /etc/release |grep Solaris |awk '{print $4}' |cut -f2 -d'_' |sed 's/[a-Z]//g'].gsub("\n","")
+              end
+            end
+          end
+          if kernel == "Darwin"
+            fact = Facter.value("macosx_productversion_minor")
           end
           fact
+        end
+      end
+    end
+    if file_name =~ /_info_/
+      free_mem  = Facter.value("memoryfree_mb")
+      if free_mem.to_i > 1000
+        base_dir  = File.dirname(full_name)
+        base_dir  = base_dir.gsub(/lib\/facter/,"manifests")
+        init_file = base_dir+"/"+file_info[2..-1].join("/")+"/init.pp"
+        Facter.add(file_name) do
+          setcode do
+            if File.exist?(init_file)
+              fact = %x[cat #{init_file} |grep '^#' |egrep -v 'fact:|::'].gsub("\n","")
+            else
+              fact = init_file
+            end
+            fact
+          end
         end
       end
     end

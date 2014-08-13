@@ -329,4 +329,6 @@
 # Added sudoerswheel type
 # 1.6.7: Tue 12 Aug 2014 15:18:16 EST
 # Improved fact name determination
+# 1.6.8: Wed 13 Aug 2014 17:18:42 EST
+# Added content type and fixed bug with debug
 
