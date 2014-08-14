@@ -71,47 +71,51 @@ end
 # Get the value of a parameter from a file
 
 def handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
-  file = get_config_file(kernel,modname,type,file_info,os_distro,os_version)
-  if file
-    if File.exist?(file) or File.symlink?(file)
-      if type =~ /hostsallow|hostsdeny|snmp|sendmailcf|ntp/
-        param = file_info[2..-1].join(" ")
-        if type =~ /hostsallow|hostsdeny/
-          fact = %x[cat #{file} |grep -v '#' |grep '#{param}']
-          if fact
-            fact = fact.gsub(/\n/,",")
+  if file_info[-1] == type
+    fact = handle_file_content(kernel,type,file_info,os_distro,os_version)
+  else
+    file = get_config_file(kernel,modname,type,file_info,os_distro,os_version)
+    if file
+      if File.exist?(file) or File.symlink?(file)
+        if type =~ /hostsallow|hostsdeny|snmp|sendmailcf|ntp/
+          param = file_info[2..-1].join(" ")
+          if type =~ /hostsallow|hostsdeny/
+            fact = %x[cat #{file} |grep -v '#' |grep '#{param}']
+            if fact
+              fact = fact.gsub(/\n/,",")
+            end
+          else
+            param = file_info[2..-1].join(" ")
+            fact  = %x[cat #{file} |grep -v '^#' |grep '#{param}'].gsub("\n","")
           end
         else
-          param = file_info[2..-1].join(" ")
-          fact  = %x[cat #{file} |grep -v '^#' |grep '#{param}'].gsub("\n","")
-        end
-      else
-        param = file_info[2..-1].join("_")
-        case type
-        when /rmmount|pam|login|gdminit|auditrules|limits/ # Files where we need the whole line
-          fact = %x[cat #{file} |grep -v '^#' |grep '#{param}'].gsub("\n","")
-        when /ssh|apache|init|umask|cups/ # File where parameter is separated from value by space
-          fact = %x[cat #{file} |grep -v '^#' |grep '#{param} ' |grep -v '#{param}[#{$atoz},0-9]' |awk '{print $2}'].gsub("\n","")
-          if type == "sshd" or type == "ssh" # With ssh fetch commented out default if we return no value
-            if fact !~ /[A-z]|[0-9]/
-              fact = %x[cat #{file} |grep '#{param} ' |grep -v '#{param}[#{$atoz},0-9]' |awk '{print $2}' |head -1].gsub("\n","")
+          param = file_info[2..-1].join("_")
+          case type
+          when /rmmount|pam|login|gdminit|auditrules|limits/ # Files where we need the whole line
+            fact = %x[cat #{file} |grep -v '^#' |grep '#{param}'].gsub("\n","")
+          when /ssh|apache|init|umask|cups/ # File where parameter is separated from value by space
+            fact = %x[cat #{file} |grep -v '^#' |grep '#{param} ' |grep -v '#{param}[#{$atoz},0-9]' |awk '{print $2}'].gsub("\n","")
+            if type == "sshd" or type == "ssh" # With ssh fetch commented out default if we return no value
+              if fact !~ /[A-z]|[0-9]/
+                fact = %x[cat #{file} |grep '#{param} ' |grep -v '#{param}[#{$atoz},0-9]' |awk '{print $2}' |head -1].gsub("\n","")
+              end
+            end
+          when /aliases|event|xscreensaver/ # Foe files where parameter is separated from value by a colon
+            fact = %x[cat #{file} |grep -v '^#' |grep '#{param}' |grep -v '#{param}[#{$atoz},0-9]' |cut -f2 -d: |sed 's/ //g'].gsub("\n","")
+          else # Otherwise assume the separator is an equals
+            if file =~ /sudoers/ and kernel == "Darwin"
+              fact = %x[sudo sh -c \"cat #{file} |grep -v '^#' |egrep '#{param}=|#{param} =' |grep -v '#{param}[#{$atoz},0-9]' |cut -f2 -d= |sed 's/ //g'\"].gsub("\n","")
+            else
+              fact = %x[cat #{file} |grep -v '^#' |egrep '#{param}=|#{param} =' |grep -v '#{param}[#{$atoz},0-9]' |cut -f2 -d= |sed 's/ //g'].gsub("\n","")
             end
           end
-        when /aliases|event|xscreensaver/ # Foe files where parameter is separated from value by a colon
-          fact = %x[cat #{file} |grep -v '^#' |grep '#{param}' |grep -v '#{param}[#{$atoz},0-9]' |cut -f2 -d: |sed 's/ //g'].gsub("\n","")
-        else # Otherwise assume the separator is an equals
-          if file =~ /sudoers/ and kernel == "Darwin"
-            fact = %x[sudo sh -c \"cat #{file} |grep -v '^#' |egrep '#{param}=|#{param} =' |grep -v '#{param}[#{$atoz},0-9]' |cut -f2 -d= |sed 's/ //g'\"].gsub("\n","")
-          else
-            fact = %x[cat #{file} |grep -v '^#' |egrep '#{param}=|#{param} =' |grep -v '#{param}[#{$atoz},0-9]' |cut -f2 -d= |sed 's/ //g'].gsub("\n","")
-          end
         end
+      else
+        fact = "file does not exist"
       end
     else
       fact = "file does not exist"
     end
-  else
-    fact = "file does not exist"
   end
   return fact
 end
@@ -819,6 +823,10 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
         file = "/etc/init.d/umask"
       end
     end
+  when "nddnetwork"
+    file = "/etc/init.d/nddnetwork"
+  when "user"
+    file = "/etc/security/user"
   when /avahid|avahi-daemon/
     file = "/etc/avahi/avahi-daemon.conf"
   when "prelink"
@@ -883,7 +891,11 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     if kernel == "SunOS"
       file = "/etc/default/login"
     else
-      file = "/etc/login.conf"
+      if kernel == "AIX"
+        file = "/etc/security/login.cfg"
+      else
+        file = "/etc/login.conf"
+      end
     end
   when "su"
     file = "/etc/default/su"
@@ -2325,12 +2337,8 @@ if file_name !~ /faust|operatingsystemupdate|_info_/ and get_fact == "yes"
         fact = handle_sudo(kernel,modname,type,file_info,os_distro,os_version)
       when "ftpd"
         fact = handle_ftpd(kernel,modname,type,file_info,os_distro,os_version)
-      when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|cups$|apache$|network|xscreensaver|ftpaccess$|proftpd$|vsftpd$|gdmbanner$|gdm$|gdminit$|^rc$|^su$|systemauth$|commonauth$|fstab$|rmmount$|pam$|pamsshd$|pamgdmautologin$|sudoers$|sendmailcf$|skel$|cupsd$|sshd$|sudoerswheel$/
-        if file_info[-1] != type
-          fact = handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
-        else
-          fact = handle_file_content(kernel,type,file_info,os_distro,os_version)
-        end
+      when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|cups$|apache$|network|xscreensaver|ftpaccess$|proftpd$|vsftpd$|gdmbanner$|gdm$|gdminit$|^rc$|^su$|systemauth$|commonauth$|fstab$|rmmount$|pam$|pamsshd$|pamgdmautologin$|sudoers$|sendmailcf$|skel$|cupsd$|sshd$|sudoerswheel$|auditrules$/
+        fact = handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
       when "groupexists"
         fact = handle_groupexists(file_info)
       when "sulogin"
@@ -2428,7 +2436,7 @@ else
     end
     if file_name =~ /_info_/
       free_mem  = Facter.value("memoryfree_mb")
-      if free_mem.to_i > 1000
+      if free_mem.to_i > 4000
         base_dir  = File.dirname(full_name)
         base_dir  = base_dir.gsub(/lib\/facter/,"manifests")
         init_file = base_dir+"/"+file_info[2..-1].join("/")+"/init.pp"
