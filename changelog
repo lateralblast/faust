@@ -335,4 +335,6 @@
 # Tweaks to file content code
 # 1.7.0: Thu 14 Aug 2014 17:39:28 EST
 # Added samba/smb type and additional comment types to file content code
+# 1.7.1: Thu 14 Aug 2014 19:08:21 EST
+# fixed system_profiler command
 

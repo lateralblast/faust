@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.7.0
+# Version:      1.7.1
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -362,7 +362,7 @@ end
 def handle_darwin_systemprofiler(file_info)
   pfile = file_info[2]
   param = file_info[3..-1].join(" ")
-  fact  = %[system_profiler #{pfile} |grep '#{param}' |awk -F ': ' '{print $2}'].gsub("\n","")
+  fact  = %x[system_profiler #{pfile} |grep '#{param}' |awk -F ': ' '{print $2}'].gsub("\n","")
   return fact
 end
 
