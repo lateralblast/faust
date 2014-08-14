@@ -333,4 +333,6 @@
 # Added content type and fixed bug with debug
 # 1.6.9: Thu 14 Aug 2014 16:57:52 EST
 # Tweaks to file content code
+# 1.7.0: Thu 14 Aug 2014 17:39:28 EST
+# Added samba/smb type and additional comment types to file content code
 

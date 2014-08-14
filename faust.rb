@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.6.8
+# Version:      1.7.0
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -823,6 +823,10 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
         file = "/etc/init.d/umask"
       end
     end
+  when "smb"
+    file = "/etc/samba/smb.conf"
+  when "samba"
+    file = "/etc/samba/smb.conf"
   when "nddnetwork"
     file = "/etc/init.d/nddnetwork"
   when "user"
@@ -1809,7 +1813,15 @@ def handle_file_content(kernel,type,file_info,os_distro,os_version)
     command = "cat '#{file}'"
   end
   if File.exist?(file)
-    fact = %x[#{command} |grep '[#{$atoz}]' |grep -v '^#']
+    case file
+    when /smb|samba/
+      comment = ";"
+    when /system/
+      comment = "*"
+    else
+      comment = "#"
+    end
+    fact = %x[#{command} |grep '[#{$atoz}]' |grep -v '^#{comment}']
   else
     fact = "file does not exist"
   end
@@ -2337,7 +2349,7 @@ if file_name !~ /faust|operatingsystemupdate|_info_/ and get_fact == "yes"
         fact = handle_sudo(kernel,modname,type,file_info,os_distro,os_version)
       when "ftpd"
         fact = handle_ftpd(kernel,modname,type,file_info,os_distro,os_version)
-      when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|cups$|apache$|network|xscreensaver|ftpaccess$|proftpd$|vsftpd$|gdmbanner$|gdm$|gdminit$|^rc$|^su$|systemauth$|commonauth$|fstab$|rmmount$|pam$|pamsshd$|pamgdmautologin$|sudoers$|sendmailcf$|skel$|cupsd$|sshd$|sudoerswheel$|auditrules$/
+      when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|cups$|apache$|network|xscreensaver|ftpaccess$|proftpd$|vsftpd$|gdmbanner$|gdm$|gdminit$|^rc$|^su$|systemauth$|commonauth$|fstab$|rmmount$|pam$|pamsshd$|pamgdmautologin$|sudoers$|sendmailcf$|skel$|cupsd$|sshd$|sudoerswheel$|auditrules$|smb$|samba$/
         fact = handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
       when "groupexists"
         fact = handle_groupexists(file_info)
