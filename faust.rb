@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.7.1
+# Version:      1.7.3
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -80,33 +80,61 @@ def handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
         if type =~ /hostsallow|hostsdeny|snmp|sendmailcf|ntp/
           param = file_info[2..-1].join(" ")
           if type =~ /hostsallow|hostsdeny/
-            fact = %x[cat #{file} |grep -v '#' |grep '#{param}']
+            if param.match(/^#/)
+              fact = %x[cat #{file} |grep -v '#' |grep '#{param}']
+            else
+              fact = %x[cat #{file} |grep '#{param}']
+            end
             if fact
               fact = fact.gsub(/\n/,",")
             end
           else
             param = file_info[2..-1].join(" ")
-            fact  = %x[cat #{file} |grep -v '^#' |grep '#{param}'].gsub("\n","")
+            if param.match(/^#/)
+              fact  = %x[cat #{file} |grep '#{param}'].gsub("\n","")
+            else
+              fact  = %x[cat #{file} |grep -v '^#' |grep '#{param}'].gsub("\n","")
+            end
           end
         else
           param = file_info[2..-1].join("_")
           case type
           when /rmmount|pam|login|gdminit|auditrules|limits/ # Files where we need the whole line
-            fact = %x[cat #{file} |grep -v '^#' |grep '#{param}'].gsub("\n","")
+            if param.match(/^#/)
+              fact = %x[cat #{file} |grep '#{param}'].gsub("\n","")
+            else
+              fact = %x[cat #{file} |grep -v '^#' |grep '#{param}'].gsub("\n","")
+            end
           when /ssh|apache|init|umask|cups/ # File where parameter is separated from value by space
-            fact = %x[cat #{file} |grep -v '^#' |grep '#{param} ' |grep -v '#{param}[#{$atoz},0-9]' |awk '{print $2}'].gsub("\n","")
+            if param.match(/^#/)
+              fact = %x[cat #{file} |grep -v '^#' |grep '#{param} ' |grep -v '#{param}[#{$atoz},0-9]' |awk '{print $2}'].gsub("\n","")
+            else
+              fact = %x[cat #{file} |grep '#{param} ' |grep -v '#{param}[#{$atoz},0-9]' |awk '{print $2}'].gsub("\n","")
+            end
             if type == "sshd" or type == "ssh" # With ssh fetch commented out default if we return no value
               if fact !~ /[A-z]|[0-9]/
                 fact = %x[cat #{file} |grep '#{param} ' |grep -v '#{param}[#{$atoz},0-9]' |awk '{print $2}' |head -1].gsub("\n","")
               end
             end
           when /aliases|event|xscreensaver/ # Foe files where parameter is separated from value by a colon
-            fact = %x[cat #{file} |grep -v '^#' |grep '#{param}' |grep -v '#{param}[#{$atoz},0-9]' |cut -f2 -d: |sed 's/ //g'].gsub("\n","")
+            if param.match(/^#/)
+              fact = %x[cat #{file} |grep -v '^#' |grep '#{param}' |grep -v '#{param}[#{$atoz},0-9]' |cut -f2 -d: |sed 's/ //g'].gsub("\n","")
+            else
+              fact = %x[cat #{file} |grep '#{param}' |grep -v '#{param}[#{$atoz},0-9]' |cut -f2 -d: |sed 's/ //g'].gsub("\n","")
+            end
           else # Otherwise assume the separator is an equals
             if file =~ /sudoers/ and kernel == "Darwin"
-              fact = %x[sudo sh -c \"cat #{file} |grep -v '^#' |egrep '#{param}=|#{param} =' |grep -v '#{param}[#{$atoz},0-9]' |cut -f2 -d= |sed 's/ //g'\"].gsub("\n","")
+              if param.match(/^#/)
+                fact = %x[sudo sh -c \"cat #{file} |egrep '#{param}=|#{param} =' |grep -v '#{param}[#{$atoz},0-9]' |cut -f2 -d= |sed 's/ //g'\"].gsub("\n","")
+              else
+                fact = %x[sudo sh -c \"cat #{file} |grep -v '^#' |egrep '#{param}=|#{param} =' |grep -v '#{param}[#{$atoz},0-9]' |cut -f2 -d= |sed 's/ //g'\"].gsub("\n","")
+              end
             else
-              fact = %x[cat #{file} |grep -v '^#' |egrep '#{param}=|#{param} =' |grep -v '#{param}[#{$atoz},0-9]' |cut -f2 -d= |sed 's/ //g'].gsub("\n","")
+              if param.match(/^#/)
+                fact = %x[cat #{file} |egrep '#{param}=|#{param} =' |grep -v '#{param}[#{$atoz},0-9]' |cut -f2 -d= |sed 's/ //g'].gsub("\n","")
+              else
+                fact = %x[cat #{file} |grep -v '^#' |egrep '#{param}=|#{param} =' |grep -v '#{param}[#{$atoz},0-9]' |cut -f2 -d= |sed 's/ //g'].gsub("\n","")
+              end
             end
           end
         end
@@ -179,10 +207,9 @@ def handle_sunos_inetadm(file_info,os_version)
       (service,param) = file_info.split("_param_")
       if service !~ /^svc/
         service = "svc:/"+service
-      else
-        service = service.gsub(/_/,"/")
       end
-      fact = %x[inetadm -l #{service} |grep '#{param}' |cut -f2 -d=].gsub("\n","")
+      service = service.gsub(/_/,"/")
+      fact    = %x[inetadm -l #{service} |grep '#{param}' |cut -f2 -d=].gsub("\n","")
     end
   end
   return fact
@@ -237,17 +264,14 @@ def handle_sunos_eeprom(file_info)
 end
 
 def handle_sunos_extendedattributes(modname,file_info)
-  search = Facter.value("#{modname}_filesystemsearch")
-  if search != "no"
-    fact = %x[find / \( -fstype nfs -o -fstype cachefs -o -fstype autofs -o -fstype ctfs -o -fstype mntfs -o -fstype objfs -o -fstype proc \) -prune -o -xattr -print]
-  end
+  fact = %x[find / \( -fstype nfs -o -fstype cachefs -o -fstype autofs -o -fstype ctfs -o -fstype mntfs -o -fstype objfs -o -fstype proc \) -prune -o -xattr -print]
   return fact
 end
 
 def handle_sunos(kernel,modname,type,file_info,fact,os_version)
   os_distro = ""
   case type
-  when /cron$|login$|syssuspend$|passwd$|system$|^auditclass$|^auditevent$|^auditcontrol$|^audituser$|defadduser$|inetinit$|rmmount$|telnetd$|keyserv$|inetd$|syslogd$|init$|umask$/
+  when /cron$|login$|syssuspend$|passwd$|system$|^auditclass$|^auditevent$|^auditcontrol$|^audituser$|defadduser$|inetinit$|rmmount$|telnetd$|keyserv$|init$|umask$/
     fact = handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
   when /power/
     fact = handle_sunos_power(kernel,modname,type,file_info,os_version)
@@ -270,7 +294,10 @@ def handle_sunos(kernel,modname,type,file_info,fact,os_version)
   when "eeprom"
     fact = handle_sunos_eeprom(file_info)
   when "extendedattributes"
-    fact = handle_sunos_extendedattributes(modname,file_info)
+    search = Facter.value("#{modname}_filesystemsearch")
+    if search != "no"
+      fact = handle_sunos_extendedattributes(modname,file_info)
+    end
   end
   return fact
 end
@@ -334,13 +361,19 @@ def handle_linux_audit(file_info)
   return fact
 end
 
-def handle_linux_authconfig(file_info)
-  fact = %x[/sbin/authconfig --test |grep '#{param}'].gsub("\n","")
+def handle_linux_authconfig(type,file_info)
+  if file_info[-1] == type
+    fact = %x[/sbin/authconfig --test]
+  else
+    fact = %x[/sbin/authconfig --test |grep '#{param}'].gsub("\n","")
+  end
   return fact
 end
 
 def handle_linux(kernel,modname,type,file_info,os_distro,fact,os_version)
   case type
+  when "authconfig"
+    fact = handle_linux_authconfig(type,file_info)
   when /avahi$|avahid$|yum$|sysctl$|selinux$|modprobe$|rclocal$|rc.local$|pamsystemauth$|floppycdromfdi$/
     fact = handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
   when "prelinkstatus"
@@ -704,29 +737,26 @@ end
 # Handle unownedfiles
 
 def handle_unownedfiles(modname,kernel,type,file_info)
-  search = Facter.value("#{modname}_filesystemsearch")
-  if search != "no"
-    if kernel == "SunOS"
-      find_command = "find / \( -fstype nfs -o -fstype cachefs \
-      -o -fstype autofs -o -fstype ctfs -o -fstype mntfs \
-      -o -fstype objfs -o -fstype proc \) -prune \
-      -o \( -nouser -o -nogroup \) -print"
-    end
-    if kernel == "Linux"
-      find_command = "df --local -P | awk {'if (NR!=1) print $6'} \
-      | xargs -I '{}' find '{}' -xdev -nouser -ls"
-    end
-    if kernel == "AIX"
-      find_command = "find / \( -fstype jfs -o -fstype jfs2 \) \
-      \( -type d -o -type f \) \( -nouser -o -nogroup \) -ls"
-    end
-    if kernel == "FreeBSD"
-      find_command = "find / \( -nouser -o -nogroup \) -print"
-    end
-    fact = %x[#{find_command}]
-    if fact
-      fact = fact.gsub(/\n/,",")
-    end
+  if kernel == "SunOS"
+    find_command = "find / \( -fstype nfs -o -fstype cachefs \
+    -o -fstype autofs -o -fstype ctfs -o -fstype mntfs \
+    -o -fstype objfs -o -fstype proc \) -prune \
+    -o \( -nouser -o -nogroup \) -print"
+  end
+  if kernel == "Linux"
+    find_command = "df --local -P | awk {'if (NR!=1) print $6'} \
+    | xargs -I '{}' find '{}' -xdev -nouser -ls"
+  end
+  if kernel == "AIX"
+    find_command = "find / \( -fstype jfs -o -fstype jfs2 \) \
+    \( -type d -o -type f \) \( -nouser -o -nogroup \) -ls"
+  end
+  if kernel == "FreeBSD"
+    find_command = "find / \( -nouser -o -nogroup \) -print"
+  end
+  fact = %x[#{find_command}]
+  if fact
+    fact = fact.gsub(/\n/,",")
   end
   return fact
 end
@@ -735,6 +765,8 @@ def handle_skel_configfile(prefix)
   case prefix
   when "profileskel"
     file = "/etc/skel/profile"
+  when "loginskel"
+    file = "/etc/skel/login"
   when "bashprofileskel"
     file = "/etc/skel/.bash_profile"
   else
@@ -843,14 +875,14 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     file = "/etc/cups/client.conf"
   when /skel/
     file = handle_skel_configfile(prefix)
-  when "syslogd"
-    file = "/etc/default/syslogd"
   when "auditrules"
     file = "/etc/audit/rules.d/audit.rules"
   when "keyserv"
     file = "/etc/default/keyserv"
-  when "inetd"
+  when "inet"
     file = "/etc/default/inetd"
+  when "inetd"
+    file = "/etc/inetd.conf"
   when "newsyslog"
     file = "/etc/newsyslog.conf"
   when "hostconfig"
@@ -880,7 +912,7 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
   when "pam"
     file = "/etc/pam.conf"
   when "pamgdmautologin"
-    file = "/et/pam.d/gdm-autologin"
+    file = "/etc/pam.d/gdm-autologin"
   when "pamsshd"
     file = "/etc/pam.d/sshd"
   when "pamsystemauth"
@@ -905,7 +937,7 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     file = "/etc/default/su"
   when "ftpd"
     file = "/etc/proftpd.conf"
-  when "ftpdaccess"
+  when /ftpdaccess|ftpaccess/
     if kernel == "SunOS"
       if os_version =~ /11/
         file = "/etc/proftpd.conf"
@@ -996,8 +1028,10 @@ def handle_configfile(kernel,type,file_info,os_distro,os_version)
     file = "/etc/default/sysstat"
   when /xscreensaver|XScreenSaver/
     file = "/usr/openwin/lib/app-defaults/XScreenSaver"
-  when /^syslog$/
+  when "syslogd"
     file = "/etc/syslog.conf"
+  when "syslog"
+    file = "/etc/default/syslogd"
   when /cron|syssuspend|passwd/
     file = "/etc/default/#{prefix}"
   when /system/
@@ -1129,7 +1163,7 @@ def handle_services(kernel,type,os_distro,os_version)
   end
   if type == "serialservices"
     if kernel == "AIX"
-      fact = %x[lsitab –a |grep 'on:/usr/sbin/getty']
+      fact =%x[lsitab -a |grep "on:/usr/sbin/getty"]
     end
     if kernel == "SunOS"
       if os_version =~ /^11/
@@ -1210,29 +1244,26 @@ end
 # Handle dotfiles type
 
 def handle_dotfiles(modname)
-  search = Facter.value("#{modname}_filesystemsearch")
-  if search != "no"
-    dot_files = []
-    if File.exist?("/etc/passwd")
-      home_dirs = %x[cat /etc/passwd |grep -v '^#' |cut -f6 -d: |uniq]
-    end
-    home_dirs = home_dirs.split(/\n/)
-    home_dirs.each do |home_dir|
-      if File.directory?(home_dir)
-        if home_dir !~ /^\/$/
-          file_list = %x[sudo sh -c "find #{home_dir} -name '.*'"]
-          file_list = file_list.split(/\n/)
-          file_list.each do |dot_file|
-            if File.exist?(dot_file)
-              dot_files.push(dot_file)
-            end
+  dot_files = []
+  if File.exist?("/etc/passwd")
+    home_dirs = %x[cat /etc/passwd |grep -v '^#' |cut -f6 -d: |uniq]
+  end
+  home_dirs = home_dirs.split(/\n/)
+  home_dirs.each do |home_dir|
+    if File.directory?(home_dir)
+      if home_dir !~ /^\/$/
+        file_list = %x[sudo sh -c "find #{home_dir} -name '.*'"]
+        file_list = file_list.split(/\n/)
+        file_list.each do |dot_file|
+          if File.exist?(dot_file)
+            dot_files.push(dot_file)
           end
         end
       end
     end
-    if fact
-      fact = dot_files.join(",")
-    end
+  end
+  if fact
+    fact = dot_files.join(",")
   end
   return fact
 end
@@ -1289,36 +1320,39 @@ end
 
 # Handle by* types
 
-def handle_readwrite(kernel,type,file_info)
+def handle_readwrite(modname,kernel,type,file_info)
   dir_name = file_info[2..-1]
   dir_name = "/"+dir_name.join("/")
-  if File.exist?(dir_name) or File.directory?(dir_name)
-    if type =~ /byothers/
-      if type =~ /readableorwritable/
-        if kernel == "SunOS"
-          fact = %x[find #{dir_name} -type f -perm -04 -o -perm -40]
+  search = Facter.value("#{modname}_filesystemsearch")
+  if search != "no"
+    if File.exist?(dir_name) or File.directory?(dir_name)
+      if type =~ /byothers/
+        if type =~ /readableorwritable/
+          if kernel == "SunOS"
+            fact = %x[find #{dir_name} -type f -perm -04 -o -perm -40]
+          else
+            fact = %x[find #{dir_name} -type f -perm +066]
+          end
         else
-          fact = %x[find #{dir_name} -type f -perm +066]
+          if kernel == "SunOS"
+            fact = %x[find #{dir_name} -type f -perm -02 -o -perm -20]
+          else
+            fact = %x[find #{dir_name} -type f -perm +022]
+          end
         end
       else
-        if kernel == "SunOS"
-          fact = %x[find #{dir_name} -type f -perm -02 -o -perm -20]
+        if type =~ /readableorwritable/
+          if kernel == "SunOS"
+            fact = %x[find #{dir_name} -type f -perm -04]
+          else
+            fact = %x[find #{dir_name} -type f -perm +006]
+          end
         else
-          fact = %x[find #{dir_name} -type f -perm +022]
-        end
-      end
-    else
-      if type =~ /readableorwritable/
-        if kernel == "SunOS"
-          fact = %x[find #{dir_name} -type f -perm -04]
-        else
-          fact = %x[find #{dir_name} -type f -perm +006]
-        end
-      else
-        if kernel == "SunOS"
-          fact = %x[find #{dir_name} -type f -perm -02]
-        else
-          fact = %x[find #{dir_name} -type f -perm +002]
+          if kernel == "SunOS"
+            fact = %x[find #{dir_name} -type f -perm -02]
+          else
+            fact = %x[find #{dir_name} -type f -perm +002]
+          end
         end
       end
     end
@@ -1333,19 +1367,22 @@ end
 # Handle worldwritable type
 
 def handle_worldwritable(kernel)
-  if kernel == "SunOS"
-    find_command = "find / \( -fstype nfs -o -fstype cachefs -o -fstype autofs -o -fstype ctfs -o -fstype mntfs -o -fstype objfs -o -fstype proc \) -prune -o -type f -perm -0002 -print"
+  search = Facter.value("#{modname}_filesystemsearch")
+  if search != "no"
+    if kernel == "SunOS"
+      find_command = "find / \( -fstype nfs -o -fstype cachefs -o -fstype autofs -o -fstype ctfs -o -fstype mntfs -o -fstype objfs -o -fstype proc \) -prune -o -type f -perm -0002 -print"
+    end
+    if kernel == "Linux"
+      find_command = "df --local -P | awk {'if (NR!=1) print $6'} | xargs -I '{}' find '{}' -xdev -type f -perm -0002"
+    end
+    if kernel == "AIX"
+      find_command = "find / \( -fstype jfs -o -fstype jfs2 \) \( -type d -o -type f \) -perm -o+w -ls"
+    end
+    if kernel == "FreeBSD"
+      find_command = "find / \( -fstype ufs -type file -perm -0002 -a ! -perm -1000 \) -print"
+    end
+    fact = %x[#{find_command}]
   end
-  if kernel == "Linux"
-    find_command = "df --local -P | awk {'if (NR!=1) print $6'} | xargs -I '{}' find '{}' -xdev -type f -perm -0002"
-  end
-  if kernel == "AIX"
-    find_command = "find / \( -fstype jfs -o -fstype jfs2 \) \( -type d -o -type f \) -perm -o+w -ls"
-  end
-  if kernel == "FreeBSD"
-    find_command = "find / \( -fstype ufs -type file -perm -0002 -a ! -perm -1000 \) -print"
-  end
-  fact = %x[#{find_command}]
   if fact
     fact = fact.gsub(/\n/,",")
   end
@@ -1656,7 +1693,7 @@ def handle_cron(kernel,type)
   end
   if type =~ /users/
     if kernel == "SunOS"
-      user_list = %x[ls -l /var/spool/cron/crontabs |awk '{print $3}' |grep '[a-Z#{$atoz}]' |uniq]
+      user_list = %x[ls -l /var/spool/cron/crontabs |awk '{print $3}' |grep '[#{$atoz}]' |uniq]
       user_list = user_list.split("\n").join(",")
     end
     if kernel == "Linux"
@@ -1669,7 +1706,7 @@ end
 
 # Handle suidfiles types
 
-def handle_suidfiles(kernel)
+def handle_suidfiles(modname,kernel)
   if kernel == "SunOS"
     find_command = "find / \( -fstype nfs -o -fstype cachefs -o -fstype autofs -o -fstype ctfs -o -fstype mntfs -o -fstype objfs -o -fstype proc \) -prune -o -type f \( -perm -4000 -o -perm -2000 \) -print"
   end
@@ -1688,7 +1725,7 @@ end
 
 # Handle stickybitfiles types
 
-def handle_stickybitfiles(kernel)
+def handle_stickybitfiles(modname,kernel)
   if kernel == "SunOS"
     find_command = "find / \( -fstype nfs -o -fstype cachefs -o -fstype autofs -o -fstype ctfs -o -fstype mntfs -o -fstype objfs -o -fstype proc \) -prune -o -type f \( -perm -0002 -o -perm -1000 \) -print"
   end
@@ -1707,7 +1744,7 @@ end
 
 # Handle readable files types
 
-def handle_readablefiles(type,kernel)
+def handle_readablefiles(modname,type,kernel)
   if type != "readabledotfiles"
     file_name = type.gsub(/files/,"")
   end
@@ -1736,7 +1773,7 @@ def handle_readablefiles(type,kernel)
       fact = []
       if File.directory?(home_dir)
         if type == "readabledotfiles"
-          files_list = %x[sudo sh -c "find #{home_dir} -name .\[a-Z#{$atoz},0-9\]* -maxdepth 1 -type f -perm +066 2>&1"]
+          files_list = %x[sudo sh -c "find #{home_dir} -name .\[#{$atoz},0-9\]* -maxdepth 1 -type f -perm +066 2>&1"]
           if files_list =~ /[a-z]/
             files_list = files_list.split(/\n/)
             files_list.each do |check_file|
@@ -1821,7 +1858,11 @@ def handle_file_content(kernel,type,file_info,os_distro,os_version)
     else
       comment = "#"
     end
-    fact = %x[#{command} |grep '[#{$atoz}]' |grep -v '^#{comment}']
+    if file.match(/sudoers/)
+      fact = %x[#{command} |grep '[#{$atoz}]']
+    else
+      fact = %x[#{command} |grep '[#{$atoz}]' |grep -v '^#{comment}']
+    end
   else
     fact = "file does not exist"
   end
@@ -2241,7 +2282,7 @@ end
 # Main code
 
 if file_name !~ /faust|operatingsystemupdate|_info_/ and get_fact == "yes"
-  kernel = Facter.value("kernel")
+  kernel  = Facter.value("kernel")
   if kernel == "Linux"
     os_distro = Facter.value("lsbdistid")
   end
@@ -2275,13 +2316,25 @@ if file_name !~ /faust|operatingsystemupdate|_info_/ and get_fact == "yes"
       if $fs_search == "yes"
         case type
         when "suidfiles"
-          fact = handle_suidfiles(kernel)
+          search = Facter.value("#{modname}_filesystemsearch")
+          if search != "no"
+            fact = handle_suidfiles(modname,kernel)
+          end
         when "stickybitfiles"
-          fact = handle_stickybitfiles(kernel)
+          search = Facter.value("#{modname}_filesystemsearch")
+          if search != "no"
+            fact = handle_stickybitfiles(modname,kernel)
+          end
         when "unownedfiles"
-          fact = handle_unownedfile(modname,kernel,type,fact_info)
+          search = Facter.value("#{modname}_filesystemsearch")
+          if search != "no"
+            fact = handle_unownedfile(modname,kernel,type,fact_info)
+          end
         when "worldwritablefiles"
-          fact = handle_worldwritable(kernel)
+          search = Facter.value("#{modname}_filesystemsearch")
+          if search != "no"
+            fact = handle_worldwritable(kernel)
+          end
         end
       end
       case type
@@ -2324,7 +2377,10 @@ if file_name !~ /faust|operatingsystemupdate|_info_/ and get_fact == "yes"
       when /sshkeys/
         fact = handle_sshkeys(type,file_info)
       when /rhostsfiles|shostsfiles|hostsequivfiles|netrcfiles|readabledotfiles/
-        fact = handle_readablefiles(type,kernel)
+        search = Facter.value("#{modname}_filesystemsearch")
+        if search != "no"
+          fact = handle_readablefiles(modname,type,kernel)
+        end
       when "symlink"
         fact = handle_symlink(file_info)
       when /cron$/
@@ -2337,10 +2393,10 @@ if file_name !~ /faust|operatingsystemupdate|_info_/ and get_fact == "yes"
         fact = handle_groupmembers(type)
       when /xml|plist|launchctl/
         fact = handle_xml_types(type,file_info)
-      when /syslog$/
+      when /syslogd$/
         fact = handle_syslog(kernel,modname,type,file_info,os_distro,os_version)
       when /byothers|byeveryone/
-        fact = handle_readwrite(kernel,type,file_info)
+        fact = handle_readwrite(modname,kernel,type,file_info)
       when /directorylisting/
         fact = handle_directorylisting(type,file_info)
       when "inactivewheelusers"
@@ -2349,7 +2405,7 @@ if file_name !~ /faust|operatingsystemupdate|_info_/ and get_fact == "yes"
         fact = handle_sudo(kernel,modname,type,file_info,os_distro,os_version)
       when "ftpd"
         fact = handle_ftpd(kernel,modname,type,file_info,os_distro,os_version)
-      when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|cups$|apache$|network|xscreensaver|ftpaccess$|proftpd$|vsftpd$|gdmbanner$|gdm$|gdminit$|^rc$|^su$|systemauth$|commonauth$|fstab$|rmmount$|pam$|pamsshd$|pamgdmautologin$|sudoers$|sendmailcf$|skel$|cupsd$|sshd$|sudoerswheel$|auditrules$|smb$|samba$/
+      when /ssh$|krb5$|hostsallow$|hostsdeny$|snmp$|sendmail$|ntp$|aliases$|grub$|cups$|apache$|network|xscreensaver|ftpaccess$|ftpdaccess$|proftpd$|vsftpd$|gdmbanner$|gdm$|gdminit$|^rc$|^su$|systemauth$|commonauth$|fstab$|rmmount$|pam$|pamsshd$|pamgdmautologin$|sudoers$|sendmailcf$|skel$|cupsd$|sshd$|sudoerswheel$|auditrules$|smb$|samba$|prelink$|syslog$|inet$|syslog$|inet$|inetd$/
         fact = handle_param_value(kernel,modname,type,file_info,os_distro,os_version)
       when "groupexists"
         fact = handle_groupexists(file_info)
@@ -2366,7 +2422,10 @@ if file_name !~ /faust|operatingsystemupdate|_info_/ and get_fact == "yes"
       when "perms"
         fact = handle_perms(kernel,modname,type,file_info,os_distro,os_version)
       when "dotfiles"
-        fact = handle_dotfiles(modname)
+        search = Facter.value("#{modname}_filesystemsearch")
+        if search != "no"
+          fact = handle_dotfiles(modname)
+        end
       when "installedpackages"
         fact = handle_installedpackages(kernel,os_distro,os_version)
       when "legacypackages"

@@ -336,5 +336,9 @@
 # 1.7.0: Thu 14 Aug 2014 17:39:28 EST
 # Added samba/smb type and additional comment types to file content code
 # 1.7.1: Thu 14 Aug 2014 19:08:21 EST
-# fixed system_profiler command
+# Fixed system_profiler command
+# 1.7.2: Fri 15 Aug 2014 13:28:46 EST
+# Fixed authconfig type
+# 1.7.3 Tue 19 Aug 2014 15:15:38 EST
+# Fixed several bugs related to filesystem searches
 
