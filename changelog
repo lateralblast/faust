@@ -341,4 +341,6 @@
 # Fixed authconfig type
 # 1.7.3 Tue 19 Aug 2014 15:15:38 EST
 # Fixed several bugs related to filesystem searches
+# 1.7.4: Tue 19 Aug 2014 15:53:56 EST
+# Fixed OS version check for Solaris 11
 

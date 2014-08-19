@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.7.3
+# Version:      1.7.4
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -1166,7 +1166,7 @@ def handle_services(kernel,type,os_distro,os_version)
       fact =%x[lsitab -a |grep "on:/usr/sbin/getty"]
     end
     if kernel == "SunOS"
-      if os_version =~ /^11/
+      if os_version == "5.11"
         fact = %x[svcs -a |grep online| grep console |grep 'term']
       else
         fact = %x[pmadm -L |egrep 'ttya|ttyb']
@@ -2119,7 +2119,7 @@ end
 
 def handle_ftpd(kernel,modname,type,file_info,os_distro,os_version)
   param = file_info[-1]
-  if kernel == "SunOS" and os_version !~ /11/
+  if kernel == "SunOS" and os_version != "5.11"
     case param.downcase
     when /umask/
       file = "/etc/ftpd/ftpaccess"
