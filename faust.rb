@@ -1,5 +1,5 @@
 # Name:         faust (Facter Automatic UNIX Symbolic Template)
-# Version:      1.7.4
+# Version:      1.7.5
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -1683,18 +1683,22 @@ end
 def handle_cron(kernel,type)
   if type =~ /allow|deny/
     file = type.gsub(/cron/,"")
-    file = "/etc/cron"+file
+    file = "/etc/cron."+file
     if File.exist?(file)
       fact = %x[cat #{file}]
       if fact
         fact = fact.split("\n").join(",")
       end
+    else
+      if type =~ /allow/
+        fact = "root"
+      end
     end
   end
   if type =~ /users/
     if kernel == "SunOS"
-      user_list = %x[ls -l /var/spool/cron/crontabs |awk '{print $3}' |grep '[#{$atoz}]' |uniq]
-      user_list = user_list.split("\n").join(",")
+      user_list = %x[ls /var/spool/cron/crontabs]
+      user_list = user_list.split(/\n|\s+/).join(",")
     end
     if kernel == "Linux"
       user_list = %x[ls -l /etc/cron.*/ |awk '{print $3}' |grep '[#{$atoz}]' |uniq]
@@ -2057,7 +2061,7 @@ def handle_issue()
   if File.exist?(file)
     fact = %x[cat #{file}]
   else
-    fact = ""
+    fact = "file does not exist"
   end
   return fact
 end
@@ -2383,7 +2387,7 @@ if file_name !~ /faust|operatingsystemupdate|_info_/ and get_fact == "yes"
         end
       when "symlink"
         fact = handle_symlink(file_info)
-      when /cron$/
+      when /cron$|cronusers$|cronallow$|crondeny$/
         fact = handle_cron(kernel,type)
       when /crontab$|crondaily$|cronhourly$|cronweekly$|cronmonthly$/
         fact = handle_crontab(kernel,type,file_info)
